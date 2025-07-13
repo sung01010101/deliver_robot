@@ -1,0 +1,23 @@
+esp32_serial_node:
+  ros__parameters:
+    # Hardware Settings
+    motor_max_rpm: 330          # rpm of motor when fully operated
+    wheel_base: 0.40            # (m) distance between wheels
+    wheel_radius: 0.025         # (m) radius of wheels
+    encoder_cpr: 780.0          # count per revolution, (13 PPR * 30 gear ratio * 4 encoders tick per revolution / 2 for only checking phase A = 780)
+    
+    # Serial Communication
+    serial_port: "/dev/ttyUSB0"
+    serial_baudrate: 115200
+    serial_timeout: 1.0
+    
+    # Timer Settings
+    timer_period: 0.01          # refresh rate for reading and publishing cmd_vel topic
+    
+    # Frame IDs
+    odom_frame_id: "odom"
+    base_frame_id: "base_link"
+    
+    # Topic Names
+    cmd_vel_topic: "/cmd_vel"
+    odom_topic: "/odom"
