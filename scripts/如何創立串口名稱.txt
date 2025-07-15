@@ -1,0 +1,5 @@
+# 1. 開啟權限
+sudo chmod 777 /etc/udev/rules.d
+
+# 2. 將 .rules 檔放到指定路徑
+
