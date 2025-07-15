@@ -9,10 +9,12 @@ from launch.actions import LogInfo
 from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
 from launch_ros.actions import Node
 
-
 def generate_launch_description():
+    
+    # Change the serial port here if needed
+    serial_port = LaunchConfiguration('serial_port', default='/dev/rplidar')
+
     channel_type =  LaunchConfiguration('channel_type', default='serial')
-    serial_port = LaunchConfiguration('serial_port', default='/dev/ttyUSB0')
     serial_baudrate = LaunchConfiguration('serial_baudrate', default='256000')
     frame_id = LaunchConfiguration('frame_id', default='laser')
     inverted = LaunchConfiguration('inverted', default='false')
