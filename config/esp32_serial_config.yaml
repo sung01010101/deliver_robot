@@ -8,7 +8,7 @@ esp32_serial_node:
     
     # Serial Communication
     serial_port: "/dev/esp32"
-    serial_baudrate: 256000
+    serial_baudrate: 115200
     serial_timeout: 1.0
     
     # Timer Settings
