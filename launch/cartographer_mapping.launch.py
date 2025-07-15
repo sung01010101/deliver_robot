@@ -59,14 +59,6 @@ def generate_launch_description():
         output = 'screen'
         )
 
-    ## ***** base_link -> laser *****
-    static_transform_publisher = Node(
-        package='tf2_ros',
-        executable='static_transform_publisher',
-        arguments=['0', '0', '0.3', '0', '0', '0', 'base_link', 'laser'],
-        output='screen'
-    )
-
     ## ***** Map Node *****
     cartographer_node = Node(
         package = 'cartographer_ros',
@@ -118,7 +110,6 @@ def generate_launch_description():
         gui_arg,
         joint_state_publisher_gui_node,
         robot_state_publisher_node,
-        static_transform_publisher,
         rviz_node,
         cartographer_node,
         cartographer_occupancy_grid_node,
