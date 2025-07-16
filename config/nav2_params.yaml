@@ -6,7 +6,7 @@ amcl:
     alpha3: 0.2
     alpha4: 0.2
     alpha5: 0.2
-    base_frame_id: "base_link"  # Changed from base_footprint to base_link
+    base_frame_id: "base_footprint"  # Standard ROS navigation base frame
     beam_skip_distance: 0.5
     beam_skip_error_threshold: 0.9
     beam_skip_threshold: 0.3
@@ -39,8 +39,8 @@ amcl:
     z_short: 0.05
     scan_topic: scan
     # Message filter parameters to fix the queue overflow issue
-    message_filter_queue_size: 100  # Increase queue size (default is usually 10-20)
-    message_filter_delay: 0.1      # Allow 100ms delay for message synchronization
+    # message_filter_queue_size: 100  # Increase queue size (default is usually 10-20)
+    # message_filter_delay: 0.1      # Allow 100ms delay for message synchronization
 
 amcl_map_client:
   ros__parameters:

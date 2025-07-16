@@ -1,8 +1,19 @@
 <?xml version="1.0"?>
 <robot name="deliver_robot">
 
-    <!-- base_link是整台車的原點  -->
+    <!-- base_footprint是機器人在地面上的投影點，通常是導航的參考框架 -->
+    <link name="base_footprint"/>
+    
+    <!-- base_link是整台車的原點，位於機器人幾何中心 -->
     <link name="base_link"/>
+    
+    <!-- 建立base_footprint到base_link的變換關係 -->
+    <!-- 假設base_link位於地面上方0.0125m處（輪子半徑的位置） -->
+    <joint name="base_footprint_joint" type="fixed">
+        <parent link="base_footprint"/>
+        <child link="base_link"/>
+        <origin xyz="0 0 0.025" rpy="0 0 0"/>
+    </joint>
     
     <!-- chassis底盤基本外觀設定  -->
     <link name="chassis">
