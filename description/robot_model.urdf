@@ -77,7 +77,7 @@
 	<joint name="laser_joint" type="fixed">
         <parent link="chassis" />
         <child link="laser" />  <!-- rplidar發布名稱 -->
-        <origin xyz="0 0 0.2" />
+        <origin xyz="0 0 0.2" rpy="0 0 -3.141592" />
     </joint>
 
 </robot>

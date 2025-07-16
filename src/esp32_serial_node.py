@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+
 import rclpy
 from rclpy.node import Node
 from nav_msgs.msg import Odometry
@@ -17,8 +18,8 @@ class Esp32SerialNode(Node):
         self.declare_parameter('motor_max_rpm', 330)
         self.declare_parameter('wheel_base', 0.40)
         self.declare_parameter('wheel_radius', 0.025)
-        self.declare_parameter('serial_port', '/dev/rplidar')
-        self.declare_parameter('serial_baudrate', 256000)
+        self.declare_parameter('serial_port', '/dev/esp32')
+        self.declare_parameter('serial_baudrate', 115200)
         self.declare_parameter('serial_timeout', 1.0)
         self.declare_parameter('timer_period', 0.01)
         self.declare_parameter('odom_frame_id', 'odom')

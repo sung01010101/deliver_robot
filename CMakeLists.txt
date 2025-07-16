@@ -25,6 +25,12 @@ install(PROGRAMS
   RENAME esp32_serial_node
 )
 
+install(PROGRAMS
+  src/get_amcl_pose.py
+  DESTINATION lib/${PROJECT_NAME}
+  RENAME get_amcl_pose
+)
+
 # Install launch files
 install(DIRECTORY launch/
   DESTINATION share/${PROJECT_NAME}/launch
