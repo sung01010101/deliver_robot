@@ -68,6 +68,11 @@ class Esp32SerialNode(Node):
                 timeout=self.serial_timeout
             )
             self.get_logger().info(f"Successfully Connected to ESP32 on {self.serial_port_name}.")
+            
+            # Send reset message to ESP32
+            reset_command = "RESET\n"
+            self.serial_port.write(reset_command.encode('utf-8'))
+            self.get_logger().info("Reset message sent to ESP32.")
         except Exception as e:
             self.get_logger().error(f"Failed to connect to ESP32: {str(e)}")
             raise e
