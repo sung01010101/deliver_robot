@@ -10,8 +10,8 @@ def generate_launch_description():
     return LaunchDescription([
         Node(
             package='deliver_robot',
-            executable='cmd_vel_publisher',
-            name='cmd_vel_publisher',
+            executable='demo_cmd_vel',
+            name='demo_cmd_vel',
             output='screen',
             parameters=[],
             remappings=[
