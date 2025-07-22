@@ -12,9 +12,23 @@ find_package(geometry_msgs REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(ament_cmake_python REQUIRED)
 
-# Install Python scripts in src directory
-install(DIRECTORY launch/
-  DESTINATION share/${PROJECT_NAME}/src
+# Install Python scripts
+install(PROGRAMS
+  src/demo_cmd_vel.py
+  DESTINATION lib/${PROJECT_NAME}
+  RENAME demo_cmd_vel
+)
+
+install(PROGRAMS
+  src/esp32_serial_node.py
+  DESTINATION lib/${PROJECT_NAME}
+  RENAME esp32_serial_node
+)
+
+install(PROGRAMS
+  src/get_amcl_pose.py
+  DESTINATION lib/${PROJECT_NAME}
+  RENAME get_amcl_pose
 )
 
 # Install launch files
