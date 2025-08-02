@@ -31,6 +31,12 @@ install(PROGRAMS
   RENAME get_amcl_pose
 )
 
+install(PROGRAMS
+  src/set_initial_pose.py
+  DESTINATION lib/${PROJECT_NAME}
+  RENAME set_initial_pose
+)
+
 # Install launch files
 install(DIRECTORY launch/
   DESTINATION share/${PROJECT_NAME}/launch
