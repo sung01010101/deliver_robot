@@ -21,9 +21,7 @@ def generate_launch_description():
             output='screen',
             parameters=[config_file],
             remappings=[
-                # You can add remappings here if needed
-                # ('/cmd_vel', '/robot/cmd_vel'),
-                # ('/odom', '/robot/odom'),
+                ('/cmd_vel', '/cmd_vel')  # Recieve twist_mux output as cmd_vel
             ]
         )
     ])

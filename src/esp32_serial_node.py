@@ -109,11 +109,16 @@ class Esp32SerialNode(Node):
         if self.serial_port.in_waiting > 0:
             line = self.serial_port.readline().decode('utf-8').strip()
             try:
-                left, right = map(int, line.split(','))
+                left, right, pwm_l, pwm_r = map(int, line.split(','))
                 
                 # calculate delta change
                 d_left = (left - self.prev_left) / self.counts_per_rev * self.circumference
                 d_right = (right - self.prev_right) / self.counts_per_rev * self.circumference
+
+                # ===== debug =====
+                self.get_logger().info(f"Received from ESP32: {line}")
+                self.get_logger().info(f"d_left: {d_left:.4f}, d_right: {d_right:.4f}")
+                self.get_logger().info(f"PWM Left: {pwm_l}, PWM Right: {pwm_r}")
                 
                 self.prev_left, self.prev_right = left, right
                 

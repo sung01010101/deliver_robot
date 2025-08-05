@@ -12,7 +12,7 @@ find_package(geometry_msgs REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(ament_cmake_python REQUIRED)
 
-# Install Python scripts
+# Install Python src files
 install(PROGRAMS
   src/demo_cmd_vel.py
   DESTINATION lib/${PROJECT_NAME}
@@ -31,11 +31,11 @@ install(PROGRAMS
   RENAME get_amcl_pose
 )
 
-install(PROGRAMS
-  src/set_initial_pose.py
-  DESTINATION lib/${PROJECT_NAME}
-  RENAME set_initial_pose
-)
+# install(PROGRAMS
+#   src/nav_through_poses.py
+#   DESTINATION lib/${PROJECT_NAME}
+#   RENAME nav_through_poses
+# )
 
 # Install launch files
 install(DIRECTORY launch/
