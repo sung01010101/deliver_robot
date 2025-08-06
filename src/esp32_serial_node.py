@@ -108,33 +108,37 @@ class Esp32SerialNode(Node):
     def read_serial_and_publish(self):
         if self.serial_port.in_waiting > 0:
             line = self.serial_port.readline().decode('utf-8').strip()
-            # try:
-            left, right, pwm_l, pwm_r = map(int, line.split(','))
-            
-            # calculate delta change
-            d_left = (left - self.prev_left) / self.counts_per_rev * self.circumference
-            d_right = (right - self.prev_right) / self.counts_per_rev * self.circumference
+            try:
+                parts = line.split(',')
+                left = int(parts[0])
+                right = int(parts[1])
+                pwm_l = float(parts[2])
+                pwm_r = float(parts[3])
+                
+                # calculate delta change
+                d_left = (left - self.prev_left) / self.counts_per_rev * self.circumference
+                d_right = (right - self.prev_right) / self.counts_per_rev * self.circumference
 
-            # # ===== debug =====
-            # self.get_logger().info(f"Received from ESP32: {line}")
-            # self.get_logger().info(f"d_left: {d_left:.4f}, d_right: {d_right:.4f}")
-            # self.get_logger().info(f"PWM Left: {pwm_l}, PWM Right: {pwm_r}")
-            
-            self.prev_left, self.prev_right = left, right
-            
-            # calculate odometry values
-            d_center = (d_left + d_right) / 2
-            d_theta = (d_right - d_left) / self.wheel_base
-            
-            self.theta += d_theta
-            self.x += d_center * math.cos(self.theta)
-            self.y += d_center * math.sin(self.theta)
-            
-            # publish tf and odometry
-            self.publish_tf()
-            self.publish_odom()
-            # except ValueError:
-            #     self.get_logger().warn(f"Receiving Invalid data: {line}")
+                # # ===== debug =====
+                # self.get_logger().info(f"Received from ESP32: {line}")
+                # self.get_logger().info(f"d_left: {d_left:.4f}, d_right: {d_right:.4f}")
+                # self.get_logger().info(f"PWM Left: {pwm_l}, PWM Right: {pwm_r}")
+                
+                self.prev_left, self.prev_right = left, right
+                
+                # calculate odometry values
+                d_center = (d_left + d_right) / 2
+                d_theta = (d_right - d_left) / self.wheel_base
+                
+                self.theta += d_theta
+                self.x += d_center * math.cos(self.theta)
+                self.y += d_center * math.sin(self.theta)
+                
+                # publish tf and odometry
+                self.publish_tf()
+                self.publish_odom()
+            except ValueError:
+                self.get_logger().warn(f"Receiving Invalid data: {line}")
 
     def publish_tf(self):
         t = TransformStamped()
