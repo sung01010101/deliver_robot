@@ -8,7 +8,7 @@
     <link name="base_link">
         <visual>
             <geometry>
-                <box size="0.52 0.39 0.02"/>
+                <box size="0.3 0.52 0.05"/>
             </geometry>
             <!-- z如果為0車體會崁在地板中間 rpy是 row pitch yaw -->
             <origin xyz="0 0 0.0125" rpy="0 0 0"/>
@@ -18,7 +18,7 @@
     <joint name="base_footprint_joint" type="fixed">
         <parent link="base_footprint"/>
         <child link="base_link"/>
-        <origin xyz="0 0 0.11" rpy="0 0 0"/>
+        <origin xyz="0 0 0.0125" rpy="0 0 0"/>
     </joint>
 
 
@@ -26,17 +26,17 @@
     <link name="chassis">
         <visual>
             <geometry>
-                <box size="0.52 0.39 0.02"/>
+                <box size="0.3 0.52 0.05"/>
             </geometry>
             <!-- z如果為0車體會崁在地板中間 rpy是 row pitch yaw  -->
-            <origin xyz="0 0 0.0125" rpy="0 0 0"/>
+            <origin xyz="0 0 0.1" rpy="0 0 0"/>
         </visual>
     </link>
     <!-- 設定原點與 chassis 的父子TF關係  -->
     <joint name="base_joint" type="fixed">
         <parent link="base_link"/>
         <child link="chassis"/>
-        <origin xyz="0 0 0.17" rpy="0 0 0"/>
+        <origin xyz="0 0 0.0125" rpy="0 0 0"/>
     </joint>
 
     <!-- 右輪的基本設定  -->
@@ -55,7 +55,7 @@
     <joint name="right_wheel_joint" type="fixed">
         <parent link="base_link"/>
         <child link="right_wheel"/>
-        <origin xyz="0 0.26 0.0015" rpy="0 0 0"/>
+        <origin xyz="0 -0.21 0.0125" rpy="0 0 0"/>
         <axis xyz="0 1 0"/>
     </joint>
 
@@ -75,7 +75,7 @@
     <joint name="left_wheel_joint" type="fixed">
         <parent link="base_link"/>
         <child link="left_wheel"/>
-        <origin xyz="0 -0.26 0.015" rpy="0 0 0"/>
+        <origin xyz="0 0.21 0.0125" rpy="0 0 0"/>
         <axis xyz="0 1 0"/>
     </joint>
 
@@ -83,7 +83,7 @@
     <link name="laser">
       	<visual>
             <geometry>
-                <cylinder length="0.035" radius="0.0375" />
+                <cylinder length="0.05" radius="0.03" />
             </geometry>
             <origin xyz="0 0 0" />
             <material name="gray">
@@ -95,14 +95,14 @@
 	<joint name="laser_joint" type="fixed">
         <parent link="base_link" />
         <child link="laser"/>  <!-- rplidar發布名稱 -->
-        <origin xyz="0 0 0.2" rpy="0 0 -3.141592" />
+        <origin xyz="0 0 0.3" rpy="0 0 -3.141592" />
     </joint>
 
     <!-- imu的基本設定  -->
     <link name="imu">
       	<visual>
             <geometry>
-                <box size="0.045 0.03 0.03"/>
+                <cylinder length="0.05" radius="0.03" />
             </geometry>
             <origin xyz="0 0 0" />
             <material name="gray">
@@ -114,7 +114,7 @@
 	<joint name="imu_joint" type="fixed">
         <parent link="base_link"/>
         <child link="imu"/>
-        <origin xyz="0 0 0.15" rpy="0 0 0" />
+        <origin xyz="0 0 0.2" rpy="0 0 0" />
     </joint>
 
 </robot>

@@ -23,7 +23,7 @@ class Esp32SerialNode(Node):
         self.declare_parameter('serial_timeout', 1.0)
         self.declare_parameter('timer_period', 0.01)
         self.declare_parameter('odom_frame_id', 'odom')
-        self.declare_parameter('base_frame_id', 'base_link')
+        self.declare_parameter('base_frame_id', 'base_footprint')
         self.declare_parameter('cmd_vel_topic', '/cmd_vel')
         self.declare_parameter('odom_topic', '/odom')
         
