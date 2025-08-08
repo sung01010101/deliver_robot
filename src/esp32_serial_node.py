@@ -14,10 +14,10 @@ class Esp32SerialNode(Node):
         super().__init__('esp32_serial_node')
         
         # Declare parameters with default values
-        self.declare_parameter('encoder_cpr', 780.0)
+        self.declare_parameter('encoder_cpr', 700.0)
         self.declare_parameter('motor_max_rpm', 330)
-        self.declare_parameter('wheel_base', 0.40)
-        self.declare_parameter('wheel_radius', 0.025)
+        self.declare_parameter('wheel_base', 0.465)
+        self.declare_parameter('wheel_radius', 0.019)
         self.declare_parameter('serial_port', '/dev/esp32')
         self.declare_parameter('serial_baudrate', 115200)
         self.declare_parameter('serial_timeout', 1.0)
@@ -120,8 +120,7 @@ class Esp32SerialNode(Node):
                 d_right = (right - self.prev_right) / self.counts_per_rev * self.circumference
 
                 # # ===== debug =====
-                # self.get_logger().info(f"Received from ESP32: {line}")
-                # self.get_logger().info(f"d_left: {d_left:.4f}, d_right: {d_right:.4f}")
+                self.get_logger().info(f"left: {left}, right: {right}")
                 # self.get_logger().info(f"PWM Left: {pwm_l}, PWM Right: {pwm_r}")
                 
                 self.prev_left, self.prev_right = left, right

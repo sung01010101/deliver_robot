@@ -1,9 +1,27 @@
 <?xml version="1.0"?>
 <robot name="deliver_robot">
 
-    <!-- base_link是整台車的原點  -->
-    <link name="base_link"/>
-    
+    <!-- base_footprint 是整台車的原點 -->
+    <link name="base_footprint"/>
+
+    <!-- base_link -->
+    <link name="base_link">
+        <visual>
+            <geometry>
+                <box size="0.3 0.52 0.05"/>
+            </geometry>
+            <!-- z如果為0車體會崁在地板中間 rpy是 row pitch yaw -->
+            <origin xyz="0 0 0.0125" rpy="0 0 0"/>
+        </visual>
+    </link>
+    <!-- base_link 與 base_footprint 的關係 -->
+    <joint name="base_footprint_joint" type="fixed">
+        <parent link="base_footprint"/>
+        <child link="base_link"/>
+        <origin xyz="0 0 0.0125" rpy="0 0 0"/>
+    </joint>
+
+
     <!-- chassis底盤基本外觀設定  -->
     <link name="chassis">
         <visual>
@@ -33,8 +51,8 @@
             </material>
         </visual>
     </link>
-    <!-- 右輪與車底盤的關節設定  -->
-    <joint name="right_wheel_joint" type="continuous">
+    <!-- 右輪與車底盤的關節設定 (fixed)  -->
+    <joint name="right_wheel_joint" type="fixed">
         <parent link="base_link"/>
         <child link="right_wheel"/>
         <origin xyz="0 -0.21 0.0125" rpy="0 0 0"/>
@@ -53,8 +71,8 @@
             </material>
         </visual>
     </link>
-    <!-- 左輪與車底盤的關節設定  -->
-    <joint name="left_wheel_joint" type="continuous">
+    <!-- 左輪與車底盤的關節設定 (fixed)  -->
+    <joint name="left_wheel_joint" type="fixed">
         <parent link="base_link"/>
         <child link="left_wheel"/>
         <origin xyz="0 0.21 0.0125" rpy="0 0 0"/>

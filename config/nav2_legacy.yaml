@@ -1,11 +1,12 @@
 amcl:
   ros__parameters:
+    use_sim_time: False
     alpha1: 0.2
     alpha2: 0.2
     alpha3: 0.2
     alpha4: 0.2
     alpha5: 0.2
-    base_frame_id: "base_footprint"
+    base_frame_id: "base_link"  # Changed from base_footprint to base_link
     beam_skip_distance: 0.5
     beam_skip_error_threshold: 0.9
     beam_skip_threshold: 0.3
@@ -29,7 +30,7 @@ amcl:
     save_pose_rate: 0.5
     sigma_hit: 0.2
     tf_broadcast: true
-    transform_tolerance: 1.0
+    transform_tolerance: 2.0
     update_min_a: 0.2
     update_min_d: 0.25
     z_hit: 0.5
@@ -37,6 +38,33 @@ amcl:
     z_rand: 0.5
     z_short: 0.05
     scan_topic: scan
+    # Adding Initial pose
+    # set_initial_pose: true
+    # initial_pose:
+    #   x: 0.0
+    #   y: 0.0
+    #   z: 0.0
+    #   yaw: 0.0
+
+# Addons
+amcl_map_client:
+  ros__parameters:
+    use_sim_time: False
+# Addons
+amcl_rclcpp_node:
+  ros__parameters:
+    use_sim_time: False
+# Addons
+map_server:
+  ros__parameters:
+    use_sim_time: False
+    # The AnyOtherYamlKey: value could be used here if you were to set non
+
+lifecycle_manager:
+  ros__parameters:
+    use_sim_time: False
+    autostart: True
+    node_names: ["map_server", "amcl"]
 
 bt_navigator:
   ros__parameters:
@@ -47,6 +75,7 @@ bt_navigator:
     default_server_timeout: 20
     wait_for_service_timeout: 1000
     action_server_result_timeout: 900.0
+    transform_tolerance: 0.5
     navigators: ["navigate_to_pose", "navigate_through_poses"]
     navigate_to_pose:
       plugin: "nav2_bt_navigator::NavigateToPoseNavigator"
@@ -73,6 +102,7 @@ controller_server:
     min_y_velocity_threshold: 0.5
     min_theta_velocity_threshold: 0.001
     failure_tolerance: 0.3
+    transform_tolerance: 0.5
     progress_checker_plugins: ["progress_checker"]
     goal_checker_plugins: ["general_goal_checker"] # "precise_goal_checker"
     controller_plugins: ["FollowPath"]
@@ -96,20 +126,20 @@ controller_server:
       yaw_goal_tolerance: 0.25
     FollowPath:
       plugin: "nav2_mppi_controller::MPPIController"
-      time_steps: 56
-      model_dt: 0.05
-      batch_size: 2000
-      ax_max: 3.0
-      ax_min: -3.0
-      ay_max: 3.0
-      az_max: 3.5
+      time_steps: 40       # Reduced from 56 for faster computation with smaller robot
+      model_dt: 0.05       # Keep same time resolution
+      batch_size: 1500     # Reduced from 2000 for faster computation
+      ax_max: 1.5          # Acceleration
+      ax_min: -1.5         # Acceleration
+      ay_max: 0.0          # Acceleration
+      az_max: 2.0          # Acceleration
       vx_std: 0.2
-      vy_std: 0.2
+      vy_std: 0
       wz_std: 0.4
-      vx_max: 0.5
-      vx_min: -0.35
-      vy_max: 0.5
-      wz_max: 1.9
+      vx_max: 0.35          ### maxium speed
+      vx_min: -0.35         ### backward speed
+      vy_max: 0.0           # cannot move sideways
+      wz_max: 1.0           # angular velocity for better stability (wheelbase 0.4m allows ~0.5m/s / 0.m = 2.5 rad/s max, so 1.0 is conservative)
       iteration_count: 1
       prune_distance: 1.7
       transform_tolerance: 0.1
@@ -192,15 +222,15 @@ local_costmap:
       global_frame: odom
       robot_base_frame: base_link
       rolling_window: true
-      width: 3
-      height: 3
+      width: 3              # Reduced back to 3m for smaller robot - sufficient for local planning
+      height: 3             # Reduced back to 3m for smaller robot
       resolution: 0.05
-      robot_radius: 0.22
+      robot_radius: 0.40      ### Reduced slightly - with 0.4m wheelbase, half is 0.2m
       plugins: ["voxel_layer", "inflation_layer"]
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"
         cost_scaling_factor: 3.0
-        inflation_radius: 0.70
+        inflation_radius: 0.50    ### Inflation radius
       voxel_layer:
         plugin: "nav2_costmap_2d::VoxelLayer"
         enabled: True
@@ -217,9 +247,9 @@ local_costmap:
           clearing: True
           marking: True
           data_type: "LaserScan"
-          raytrace_max_range: 3.0
+          raytrace_max_range: 2.5    # Reduced from 3.0 for smaller robot
           raytrace_min_range: 0.0
-          obstacle_max_range: 2.5
+          obstacle_max_range: 2.0    # Reduced from 2.5 for better performance
           obstacle_min_range: 0.0
       static_layer:
         plugin: "nav2_costmap_2d::StaticLayer"
@@ -233,7 +263,7 @@ global_costmap:
       publish_frequency: 1.0
       global_frame: map
       robot_base_frame: base_link
-      robot_radius: 0.22
+      robot_radius: 0.40      ### Match local costmap
       resolution: 0.05
       track_unknown_space: true
       plugins: ["static_layer", "obstacle_layer", "inflation_layer"]
@@ -247,9 +277,9 @@ global_costmap:
           clearing: True
           marking: True
           data_type: "LaserScan"
-          raytrace_max_range: 3.0
+          raytrace_max_range: 3.0    # Reduced from 3.0 for smaller robot
           raytrace_min_range: 0.0
-          obstacle_max_range: 2.5
+          obstacle_max_range: 2.5    # Reduced from 2.5 for better performance
           obstacle_min_range: 0.0
       static_layer:
         plugin: "nav2_costmap_2d::StaticLayer"
@@ -257,7 +287,7 @@ global_costmap:
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"
         cost_scaling_factor: 3.0
-        inflation_radius: 0.7
+        inflation_radius: 0.50     ### Inflation radius
       always_send_full_costmap: True
 
 # The yaml_filename does not need to be specified since it going to be set by defaults in launch.
@@ -279,6 +309,7 @@ planner_server:
     expected_planner_frequency: 20.0
     planner_plugins: ["GridBased"]
     costmap_update_timeout: 1.0
+    transform_tolerance: 0.5
     GridBased:
       plugin: "nav2_navfn_planner::NavfnPlanner"
       tolerance: 0.5
@@ -301,6 +332,7 @@ behavior_server:
     local_footprint_topic: local_costmap/published_footprint
     global_footprint_topic: global_costmap/published_footprint
     cycle_frequency: 10.0
+    transform_tolerance: 0.5
     behavior_plugins: ["spin", "backup", "drive_on_heading", "assisted_teleop", "wait"]
     spin:
       plugin: "nav2_behaviors::Spin"
@@ -317,9 +349,9 @@ behavior_server:
     robot_base_frame: base_link
     transform_tolerance: 0.1
     simulate_ahead_time: 2.0
-    max_rotational_vel: 1.0
-    min_rotational_vel: 0.4
-    rotational_acc_lim: 3.2
+    max_rotational_vel: 1.0        # Match the wz_max from controller
+    min_rotational_vel: 0.4        # Reduced for smaller robot
+    rotational_acc_lim: 2.0        # Reduced from 3.2 for smaller robot
 
 waypoint_follower:
   ros__parameters:
@@ -337,10 +369,10 @@ velocity_smoother:
     smoothing_frequency: 20.0
     scale_velocities: False
     feedback: "OPEN_LOOP"
-    max_velocity: [0.5, 0.0, 2.0]
-    min_velocity: [-0.5, 0.0, -2.0]
-    max_accel: [2.5, 0.0, 3.2]
-    max_decel: [-2.5, 0.0, -3.2]
+    max_velocity: [0.5, 0.0, 2.0]    # Match controller limits: [linear_x, linear_y, angular_z]
+    min_velocity: [-0.5, 0.0, -2.0]  # Symmetric limits
+    max_accel: [2.5, 0.0, 3.2]        # Reduced acceleration for small wheels
+    max_decel: [-2.5, 0.0, -3.2]      # Corresponding deceleration limits
     odom_topic: "odom"
     odom_duration: 0.1
     deadband_velocity: [0.0, 0.0, 0.0]
@@ -348,10 +380,10 @@ velocity_smoother:
 
 collision_monitor:
   ros__parameters:
-    base_frame_id: "base_footprint"
+    base_frame_id: "base_link"  # Changed from base_footprint to base_link
     odom_frame_id: "odom"
     cmd_vel_in_topic: "cmd_vel_smoothed"
-    cmd_vel_out_topic: "cmd_vel"          ### change to match twist_mux output
+    cmd_vel_out_topic: "cmd_vel"
     state_topic: "collision_monitor_state"
     transform_tolerance: 0.2
     source_timeout: 1.0
@@ -395,8 +427,8 @@ docking_server:
     dock_plugins: ['simple_charging_dock']
     simple_charging_dock:
       plugin: 'opennav_docking::SimpleChargingDock'
-      docking_threshold: 0.05
-      staging_x_offset: -0.7
+      docking_threshold: 0.03        # Reduced from 0.05 for smaller robot precision
+      staging_x_offset: -0.5         # Reduced from -0.7 for smaller robot
       use_external_detection_pose: true
       use_battery_status: false # true
       use_stall_detection: false # true
@@ -420,8 +452,8 @@ docking_server:
     controller:
       k_phi: 3.0
       k_delta: 2.0
-      v_linear_min: 0.15
-      v_linear_max: 0.15
+      v_linear_min: 0.10            # Reduced from 0.15 for smaller robot
+      v_linear_max: 0.15            # Keep conservative for docking
       use_collision_detection: true
       costmap_topic: "local_costmap/costmap_raw"
       footprint_topic: "local_costmap/published_footprint"
@@ -432,7 +464,7 @@ docking_server:
 
 loopback_simulator:
   ros__parameters:
-    base_frame_id: "base_footprint"
+    base_frame_id: "base_link"  # Changed from base_footprint to base_link
     odom_frame_id: "odom"
     map_frame_id: "map"
     scan_frame_id: "base_scan"  # tb4_loopback_simulator.launch.py remaps to 'rplidar_link'
