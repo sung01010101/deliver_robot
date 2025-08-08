@@ -112,17 +112,26 @@ class Esp32SerialNode(Node):
                 parts = line.split(',')
                 left = int(parts[0])
                 right = int(parts[1])
+
+                # debugging output
                 pwm_l = float(parts[2])
                 pwm_r = float(parts[3])
+                input_vl = float(parts[4])
+                input_vr = float(parts[5])
+                output_vl = float(parts[6])
+                output_vr = float(parts[7])
                 
                 # calculate delta change
                 d_left = (left - self.prev_left) / self.counts_per_rev * self.circumference
                 d_right = (right - self.prev_right) / self.counts_per_rev * self.circumference
 
                 # # ===== debug =====
-                self.get_logger().info(f"left: {left}, right: {right}")
+                # self.get_logger().info(f"left: {left}, right: {right}")
+                self.get_logger().info(f"Left: {left}, Right: {right}, Input Vel Left: {input_vl}, Input Vel Right: {input_vr}, Output Vel Left: {output_vl}, Output Vel Right: {output_vr}")
                 # self.get_logger().info(f"PWM Left: {pwm_l}, PWM Right: {pwm_r}")
-                
+                # self.get_logger().info(f"Input Vel Left: {input_vl}, Input Vel Right: {input_vr}")
+                # self.get_logger().info(f"Output Vel Left: {output_vl}, Output Vel Right: {output_vr}")
+
                 self.prev_left, self.prev_right = left, right
                 
                 # calculate odometry values
