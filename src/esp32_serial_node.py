@@ -127,7 +127,7 @@ class Esp32SerialNode(Node):
 
                 # # ===== debug =====
                 # self.get_logger().info(f"left: {left}, right: {right}")
-                self.get_logger().info(f"Left: {left}, Right: {right}, Input Vel Left: {input_vl}, Input Vel Right: {input_vr}, Output Vel Left: {output_vl}, Output Vel Right: {output_vr}")
+                self.get_logger().info(f"Left: {left}, Right: {right}, PWM Left: {pwm_l}, PWM Right: {pwm_r}, Input Vel Left: {input_vl}, Input Vel Right: {input_vr}, Output Vel Left: {output_vl}, Output Vel Right: {output_vr}")
                 # self.get_logger().info(f"PWM Left: {pwm_l}, PWM Right: {pwm_r}")
                 # self.get_logger().info(f"Input Vel Left: {input_vl}, Input Vel Right: {input_vr}")
                 # self.get_logger().info(f"Output Vel Left: {output_vl}, Output Vel Right: {output_vr}")
