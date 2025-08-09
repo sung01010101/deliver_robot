@@ -129,8 +129,9 @@ class Esp32SerialNode(Node):
 
                 # # ===== debug =====
                 # self.get_logger().info(f"left: {left}, right: {right}")
-                self.get_logger().info(f"Left: {left}, Right: {right}, PWM Left: {pwm_l}, PWM Right: {pwm_r}, Input Vel Left: {input_vl}, Input Vel Right: {input_vr}, Output Vel Left: {output_vl}, Output Vel Right: {output_vr}")
                 # self.get_logger().info(f"PWM Left: {pwm_l}, PWM Right: {pwm_r}")
+                # self.get_logger().info(f"left: {left}, right: {right}, PWM Left: {pwm_l}, PWM Right: {pwm_r}")
+                # self.get_logger().info(f"Left: {left}, Right: {right}, PWM Left: {pwm_l}, PWM Right: {right_r}, Input Vel Left: {input_vl}, Input Vel Right: {input_vr}, Output Vel Left: {output_vl}, Output Vel Right: {output_vr}")
                 # self.get_logger().info(f"Input Vel Left: {input_vl}, Input Vel Right: {input_vr}")
                 # self.get_logger().info(f"Output Vel Left: {output_vl}, Output Vel Right: {output_vr}")
 
@@ -140,8 +141,11 @@ class Esp32SerialNode(Node):
                 d_center = (d_left + d_right) / 2
                 d_theta = (d_right - d_left) / self.wheel_base
                 
-                # apply slip ratio
-                d_theta *= self.slip_ratio
+                # calculate dynamic slip ratio based on movement pattern
+                dynamic_slip_ratio = self.calculate_dynamic_slip_ratio(d_left, d_right, d_center)
+                
+                # apply dynamic slip ratio
+                d_theta *= dynamic_slip_ratio
 
                 self.theta += d_theta
                 self.x += d_center * math.cos(self.theta)
@@ -152,6 +156,40 @@ class Esp32SerialNode(Node):
                 self.publish_odom()
             except ValueError:
                 self.get_logger().warn(f"Receiving Invalid data: {line}")
+
+    def calculate_dynamic_slip_ratio(self, d_left, d_right, d_center):
+        """
+        Calculate dynamic slip ratio based on robot movement pattern.
+        Returns 0.75 for curved movement and 0.81 for spinning in place,
+        with linear interpolation between these values.
+        """
+        # Calculate the absolute difference between wheel movements
+        wheel_diff = abs(d_left - d_right)
+        
+        # Calculate the average wheel movement to normalize
+        avg_movement = abs(d_center)
+        
+        # If there's no movement, use the base slip ratio
+        if avg_movement < 1e-6:
+            return self.slip_ratio
+        
+        # Calculate normalized difference (0 = pure translation, 1 = pure rotation)
+        # When wheels move in same direction with same speed: wheel_diff ≈ 0
+        # When wheels move in opposite directions: wheel_diff ≈ 2 * avg_movement
+        normalized_diff = min(wheel_diff / (2 * avg_movement), 1.0)
+        
+        # Linear interpolation between 0.75 (curved) and 0.81 (spinning)
+        # normalized_diff = 0 -> curved movement (0.75)
+        # normalized_diff = 1 -> spinning in place (0.81)
+        slip_ratio_min = 0.75  # for curved movement
+        slip_ratio_max = 0.81  # for spinning in place
+        
+        dynamic_slip = slip_ratio_min + normalized_diff * (slip_ratio_max - slip_ratio_min)
+        
+        # Optional: log the dynamic slip ratio for debugging
+        self.get_logger().info(f"Normalized diff: {normalized_diff:.3f}, Dynamic slip: {dynamic_slip:.3f}")
+        
+        return dynamic_slip
 
     def publish_tf(self):
         t = TransformStamped()
