@@ -18,7 +18,7 @@ class Esp32SerialNode(Node):
         self.declare_parameter('motor_max_rpm', 330)
         self.declare_parameter('wheel_base', 0.465)
         self.declare_parameter('wheel_radius', 0.019)
-        self.declare_parameter('slip_ratio', 0.666)
+        self.declare_parameter('slip_ratio', 0.7)
         self.declare_parameter('serial_port', '/dev/esp32')
         self.declare_parameter('serial_baudrate', 115200)
         self.declare_parameter('serial_timeout', 1.0)
@@ -141,7 +141,7 @@ class Esp32SerialNode(Node):
                 d_theta = (d_right - d_left) / self.wheel_base
                 
                 # apply slip ratio
-                d_center *= self.slip_ratio
+                d_theta *= self.slip_ratio
 
                 self.theta += d_theta
                 self.x += d_center * math.cos(self.theta)
