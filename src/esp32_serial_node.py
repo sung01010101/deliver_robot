@@ -18,13 +18,13 @@ class Esp32SerialNode(Node):
         self.declare_parameter('motor_max_rpm', 330)
         self.declare_parameter('wheel_base', 0.465)
         self.declare_parameter('wheel_radius', 0.019)
-        self.declare_parameter('slip_ratio', 0.75)
-        self.declare_parameter('slip_ratio_min', 0.75)
-        self.declare_parameter('slip_ratio_max', 0.81)
+        self.declare_parameter('slip_ratio', 0.18)
+        self.declare_parameter('param_n', 0.5)
         self.declare_parameter('serial_port', '/dev/esp32')
         self.declare_parameter('serial_baudrate', 115200)
         self.declare_parameter('serial_timeout', 1.0)
-        self.declare_parameter('timer_period', 0.01)
+        self.declare_parameter('cmd_vel_update_interval', 0.01)
+        self.declare_parameter('odom_update_interval', 0.05)
         self.declare_parameter('odom_frame_id', 'odom')
         self.declare_parameter('base_frame_id', 'base_footprint')
         self.declare_parameter('cmd_vel_topic', '/cmd_vel')
@@ -36,12 +36,12 @@ class Esp32SerialNode(Node):
         self.wheel_base = self.get_parameter('wheel_base').get_parameter_value().double_value
         self.wheel_radius = self.get_parameter('wheel_radius').get_parameter_value().double_value
         self.slip_ratio = self.get_parameter('slip_ratio').get_parameter_value().double_value
-        self.slip_ratio_min = self.get_parameter('slip_ratio_min').get_parameter_value().double_value
-        self.slip_ratio_max = self.get_parameter('slip_ratio_max').get_parameter_value().double_value
+        self.param_n = self.get_parameter('param_n').get_parameter_value().double_value
         self.serial_port_name = self.get_parameter('serial_port').get_parameter_value().string_value
         self.serial_baudrate = self.get_parameter('serial_baudrate').get_parameter_value().integer_value
         self.serial_timeout = self.get_parameter('serial_timeout').get_parameter_value().double_value
-        self.timer_period = self.get_parameter('timer_period').get_parameter_value().double_value
+        self.cmd_vel_update_interval = self.get_parameter('cmd_vel_update_interval').get_parameter_value().double_value
+        self.odom_update_interval = self.get_parameter('odom_update_interval').get_parameter_value().double_value
         self.odom_frame_id = self.get_parameter('odom_frame_id').get_parameter_value().string_value
         self.base_frame_id = self.get_parameter('base_frame_id').get_parameter_value().string_value
         self.cmd_vel_topic = self.get_parameter('cmd_vel_topic').get_parameter_value().string_value
@@ -58,6 +58,8 @@ class Esp32SerialNode(Node):
         self.get_logger().info(f"  Wheel Radius: {self.wheel_radius} m")
         self.get_logger().info(f"  Serial Port: {self.serial_port_name}")
         self.get_logger().info(f"  Serial Baudrate: {self.serial_baudrate}")
+        self.get_logger().info(f"  Slip Ratio: {self.slip_ratio}")
+        self.get_logger().info(f"  Param N: {self.param_n}")
         
         # Initialize odometry data
         self.x = 0.0
@@ -84,11 +86,13 @@ class Esp32SerialNode(Node):
             raise e
         
         # Create publisher, subscriber and timer
-        self.tf_broadcaster = TransformBroadcaster(self)
+        self.cmd_vel_sub = self.create_subscription(Twist, self.cmd_vel_topic, self.cmd_vel_callback, 10)
+        self.cmd_vel_timer = self.create_timer(self.cmd_vel_update_interval, self.read_serial_and_publish)
+        
         self.odom_pub = self.create_publisher(Odometry, self.odom_topic, 10)
-        self.cmd_vel_sub = self.create_subscription(
-            Twist, self.cmd_vel_topic, self.cmd_vel_callback, 10)
-        self.timer = self.create_timer(self.timer_period, self.read_serial_and_publish)
+        self.odom_timer = self.create_timer(self.odom_update_interval, self.publish_odometry)
+
+        # self.tf_broadcaster = TransformBroadcaster(self)  # Uncomment if using only encoder data and no IMU
 
     def cmd_vel_callback(self, msg):
         linear_vel = msg.linear.x
@@ -116,83 +120,67 @@ class Esp32SerialNode(Node):
             line = self.serial_port.readline().decode('utf-8').strip()
             try:
                 parts = line.split(',')
-                left = int(parts[0])
-                right = int(parts[1])
+                left_encoder_count = int(parts[0])
+                right_encoder_count = int(parts[1])
 
-                # debugging output
+                # debugging outputs
                 pwm_l = float(parts[2])
                 pwm_r = float(parts[3])
-                input_vl = float(parts[4])
-                input_vr = float(parts[5])
-                output_vl = float(parts[6])
-                output_vr = float(parts[7])
-                
-                # calculate delta change
-                d_left = (left - self.prev_left) / self.counts_per_rev * self.circumference
-                d_right = (right - self.prev_right) / self.counts_per_rev * self.circumference
+                input_rpm_l = float(parts[4])
+                input_rpm_r = float(parts[5])
+                output_rpm_l = float(parts[6])
+                output_rpm_r = float(parts[7])
+                # self.get_logger().info(f"Left: {left_encoder_count}, Right: {right_encoder_count}, PWM Left: {pwm_l}, PWM Right: {pwm_r},\
+                #                         Input RPM Left: {input_rpm_l}, Input RPM Right: {input_rpm_r}, Output RPM Left: {output_rpm_l}, \
+                #                         Output RPM Right: {output_rpm_r}")
 
-                # # ===== debug =====
-                # self.get_logger().info(f"left: {left}, right: {right}")
-                # self.get_logger().info(f"PWM Left: {pwm_l}, PWM Right: {pwm_r}")
-                # self.get_logger().info(f"left: {left}, right: {right}, PWM Left: {pwm_l}, PWM Right: {pwm_r}")
-                # self.get_logger().info(f"Left: {left}, Right: {right}, PWM Left: {pwm_l}, PWM Right: {right_r}, Input Vel Left: {input_vl}, Input Vel Right: {input_vr}, Output Vel Left: {output_vl}, Output Vel Right: {output_vr}")
-                # self.get_logger().info(f"Input Vel Left: {input_vl}, Input Vel Right: {input_vr}")
-                # self.get_logger().info(f"Output Vel Left: {output_vl}, Output Vel Right: {output_vr}")
+                # distance change of left and right wheels
+                d_left = (left_encoder_count - self.prev_left_count) / self.counts_per_rev * self.circumference
+                d_right = (right_encoder_count - self.prev_right_count) / self.counts_per_rev * self.circumference
 
-                self.prev_left, self.prev_right = left, right
-                
+                # calculate slip ratio of two wheels based on slip-compensating odometry (SCOG)
+                slip_ratio_fast = self.slip_ratio
+                slip_ratio_slow = - self.get_signum(d_left * d_right) * (slip_ratio_fast ** self.param_n)
+
+                # apply slip ratio effect to wheel distances
+                if d_left > d_right:
+                    d_left *= 1 - slip_ratio_fast
+                    d_right *= 1 - slip_ratio_slow
+                else:
+                    d_left *= 1 - slip_ratio_slow
+                    d_right *= 1 - slip_ratio_fast
+
                 # calculate odometry values
-                d_center = (d_left + d_right) / 2
+                d_center = (d_left + d_right) / 2.0
                 d_theta = (d_right - d_left) / self.wheel_base
                 
-                # calculate dynamic slip ratio based on movement pattern
-                dynamic_slip_ratio = self.calculate_dynamic_slip_ratio(d_left, d_right, d_center)
-                
                 # apply dynamic slip ratio
-                d_theta *= dynamic_slip_ratio
-
                 self.theta += d_theta
                 self.x += d_center * math.cos(self.theta)
                 self.y += d_center * math.sin(self.theta)
                 
-                # publish tf and odometry
-                self.publish_tf()
+                # publish odometry
+                # self.publish_tf()  # Uncomment if using only encoder data and no IMU
                 self.publish_odom()
+                
+                # update encoder counts
+                self.prev_left_count = left_encoder_count
+                self.prev_right_count = right_encoder_count
+            
             except ValueError:
-                self.get_logger().warn(f"Receiving Invalid data: {line}")
+                self.get_logger().warn(f"Receiving Invalid data format: {line}")
 
-    def calculate_dynamic_slip_ratio(self, d_left, d_right, d_center):
+    def get_signum(self, value):
         """
-        Calculate dynamic slip ratio based on robot movement pattern.
-        Returns slip_ratio_min for curved movement and slip_ratio_max for spinning in place,
-        with linear interpolation between these values.
+        Returns 1 for positive, -1 for negative, and 0 for zero.
         """
-        # Calculate the absolute difference between wheel movements
-        wheel_diff = abs(d_left - d_right)
-        
-        # Calculate the average wheel movement to normalize
-        avg_movement = abs(d_center)
-        
-        # If there's no movement, use the base slip ratio
-        if avg_movement < 1e-6:
-            return self.slip_ratio
-        
-        # Calculate normalized difference (0 = pure translation, 1 = pure rotation)
-        # When wheels move in same direction with same speed: wheel_diff ≈ 0
-        # When wheels move in opposite directions: wheel_diff ≈ 2 * avg_movement
-        normalized_diff = min(wheel_diff / (2 * avg_movement), 1.0)
-        
-        # Linear interpolation between slip_ratio_min (curved) and slip_ratio_max (spinning)
-        # normalized_diff = 0 -> curved movement (slip_ratio_min)
-        # normalized_diff = 1 -> spinning in place (slip_ratio_max)
-        dynamic_slip = self.slip_ratio_min + normalized_diff * (self.slip_ratio_max - self.slip_ratio_min)
-        
-        # Optional: log the dynamic slip ratio for debugging
-        self.get_logger().info(f"Normalized diff: {normalized_diff:.3f}, Dynamic slip: {dynamic_slip:.3f}")
-        
-        return dynamic_slip
+        return (value > 0) - (value < 0)
 
     def publish_tf(self):
+        """
+        Publish transform from odom to base_link.
+        Use only if using only encoder data and no IMU.
+        """
         t = TransformStamped()
         t.header.stamp = self.get_clock().now().to_msg()
         t.header.frame_id = self.odom_frame_id
