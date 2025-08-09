@@ -7,7 +7,9 @@ esp32_serial_node:
     encoder_cpr: 700.0          # count per revolution, (13 PPR * 30 gear ratio * 4 encoders tick per revolution / 2 for only checking phase A = 700)
 
     # Slip Ratio
-    slip_ratio: 0.7             # to compensate for slip, this value is used to adjust the odometry calculations
+    slip_ratio: 0.75            # base slip ratio (used as fallback when no movement)
+    slip_ratio_min: 0.75        # minimum slip ratio for curved movement
+    slip_ratio_max: 0.81        # maximum slip ratio for spinning in place
 
     # Serial Communication
     serial_port: "/dev/esp32"

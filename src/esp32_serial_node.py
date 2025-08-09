@@ -18,7 +18,9 @@ class Esp32SerialNode(Node):
         self.declare_parameter('motor_max_rpm', 330)
         self.declare_parameter('wheel_base', 0.465)
         self.declare_parameter('wheel_radius', 0.019)
-        self.declare_parameter('slip_ratio', 0.7)
+        self.declare_parameter('slip_ratio', 0.75)
+        self.declare_parameter('slip_ratio_min', 0.75)
+        self.declare_parameter('slip_ratio_max', 0.81)
         self.declare_parameter('serial_port', '/dev/esp32')
         self.declare_parameter('serial_baudrate', 115200)
         self.declare_parameter('serial_timeout', 1.0)
@@ -34,6 +36,8 @@ class Esp32SerialNode(Node):
         self.wheel_base = self.get_parameter('wheel_base').get_parameter_value().double_value
         self.wheel_radius = self.get_parameter('wheel_radius').get_parameter_value().double_value
         self.slip_ratio = self.get_parameter('slip_ratio').get_parameter_value().double_value
+        self.slip_ratio_min = self.get_parameter('slip_ratio_min').get_parameter_value().double_value
+        self.slip_ratio_max = self.get_parameter('slip_ratio_max').get_parameter_value().double_value
         self.serial_port_name = self.get_parameter('serial_port').get_parameter_value().string_value
         self.serial_baudrate = self.get_parameter('serial_baudrate').get_parameter_value().integer_value
         self.serial_timeout = self.get_parameter('serial_timeout').get_parameter_value().double_value
@@ -160,7 +164,7 @@ class Esp32SerialNode(Node):
     def calculate_dynamic_slip_ratio(self, d_left, d_right, d_center):
         """
         Calculate dynamic slip ratio based on robot movement pattern.
-        Returns 0.75 for curved movement and 0.81 for spinning in place,
+        Returns slip_ratio_min for curved movement and slip_ratio_max for spinning in place,
         with linear interpolation between these values.
         """
         # Calculate the absolute difference between wheel movements
@@ -178,13 +182,10 @@ class Esp32SerialNode(Node):
         # When wheels move in opposite directions: wheel_diff ≈ 2 * avg_movement
         normalized_diff = min(wheel_diff / (2 * avg_movement), 1.0)
         
-        # Linear interpolation between 0.75 (curved) and 0.81 (spinning)
-        # normalized_diff = 0 -> curved movement (0.75)
-        # normalized_diff = 1 -> spinning in place (0.81)
-        slip_ratio_min = 0.75  # for curved movement
-        slip_ratio_max = 0.81  # for spinning in place
-        
-        dynamic_slip = slip_ratio_min + normalized_diff * (slip_ratio_max - slip_ratio_min)
+        # Linear interpolation between slip_ratio_min (curved) and slip_ratio_max (spinning)
+        # normalized_diff = 0 -> curved movement (slip_ratio_min)
+        # normalized_diff = 1 -> spinning in place (slip_ratio_max)
+        dynamic_slip = self.slip_ratio_min + normalized_diff * (self.slip_ratio_max - self.slip_ratio_min)
         
         # Optional: log the dynamic slip ratio for debugging
         self.get_logger().info(f"Normalized diff: {normalized_diff:.3f}, Dynamic slip: {dynamic_slip:.3f}")
