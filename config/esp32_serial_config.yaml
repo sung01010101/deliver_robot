@@ -6,6 +6,9 @@ esp32_serial_node:
     wheel_radius: 0.02          # (m) radius of wheels
     encoder_cpr: 700.0          # count per revolution, (13 PPR * 30 gear ratio * 4 encoders tick per revolution / 2 for only checking phase A = 700)
 
+    # Slip Ratio
+    slip_ratio: 0.666           # to compensate for slip, this value is used to adjust the odometry calculations
+
     # Serial Communication
     serial_port: "/dev/esp32"
     serial_baudrate: 115200
