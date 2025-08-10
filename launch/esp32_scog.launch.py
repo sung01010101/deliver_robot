@@ -4,7 +4,6 @@ import os
 from launch.actions import DeclareLaunchArgument
 from launch import LaunchDescription
 from launch_ros.actions import Node
-from launch.conditions import IfCondition
 from launch.substitutions import LaunchConfiguration
 from ament_index_python.packages import get_package_share_directory
 
@@ -14,14 +13,6 @@ def generate_launch_description():
     # directories
     package_dir = get_package_share_directory('deliver_robot')
     esp32_config_file = os.path.join(package_dir, 'config', 'esp32_serial_config.yaml')
-    ekf_config_file = os.path.join(package_dir, 'config', 'ekf.yaml')
-
-    # launch arguments
-    declare_use_ekf = DeclareLaunchArgument(
-        'use_ekf',
-        default_value='True',
-        description='Use EKF if True',
-    )
 
     declare_use_sim_time = DeclareLaunchArgument(
         'use_sim_time',
@@ -29,20 +20,10 @@ def generate_launch_description():
         description='Use simulation time if True'
     )
 
-    # launch nodes
-    robot_localization_node = Node(
-        package='robot_localization',
-        executable='ekf_node',
-        name='ekf_node',
-        output='screen',
-        parameters=[ekf_config_file],
-        condition=IfCondition(LaunchConfiguration('use_ekf'))
-    )
-
-    esp32_serial_node = Node(
+    esp32_scog_node = Node(
         package='deliver_robot',
-        executable='esp32_serial_node',
-        name='esp32_serial_node',
+        executable='esp32_scog_node',
+        name='esp32_scog_node',
         output='screen',
         parameters=[esp32_config_file],
             remappings=[
@@ -51,8 +32,6 @@ def generate_launch_description():
         )
 
     return LaunchDescription([
-        declare_use_ekf,
         declare_use_sim_time,
-        robot_localization_node,
-        esp32_serial_node
+        esp32_scog_node
     ])

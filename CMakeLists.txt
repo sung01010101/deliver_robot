@@ -20,9 +20,21 @@ install(PROGRAMS
 )
 
 install(PROGRAMS
+  src/esp32_scog_node.py
+  DESTINATION lib/${PROJECT_NAME}
+  RENAME esp32_scog_node
+)
+
+install(PROGRAMS
   src/esp32_serial_node.py
   DESTINATION lib/${PROJECT_NAME}
   RENAME esp32_serial_node
+)
+
+install(PROGRAMS
+  src/get_param_n.py
+  DESTINATION lib/${PROJECT_NAME}
+  RENAME get_param_n
 )
 
 install(PROGRAMS
@@ -30,12 +42,6 @@ install(PROGRAMS
   DESTINATION lib/${PROJECT_NAME}
   RENAME get_amcl_pose
 )
-
-# install(PROGRAMS
-#   src/nav_through_poses.py
-#   DESTINATION lib/${PROJECT_NAME}
-#   RENAME nav_through_poses
-# )
 
 # Install launch files
 install(DIRECTORY launch/

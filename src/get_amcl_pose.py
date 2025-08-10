@@ -12,7 +12,7 @@ class PoseLogger(Node):
         super().__init__('pose_logger')
 
         # Declare parameter for output directory
-        self.declare_parameter('output_dir', os.path.expanduser('~/'))
+        self.declare_parameter('output_dir', os.path.expanduser('~/csv/amcl_pose/'))
         
         # Replace this with your actual topic name
         self.subscription = self.create_subscription(

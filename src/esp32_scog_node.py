@@ -18,30 +18,34 @@ class Esp32SerialNode(Node):
         self.declare_parameter('motor_max_rpm', 330)
         self.declare_parameter('wheel_base', 0.465)
         self.declare_parameter('wheel_radius', 0.019)
+        self.declare_parameter('slip_ratio', 0.18)
+        self.declare_parameter('param_n', 0.5)
         self.declare_parameter('serial_port', '/dev/esp32')
         self.declare_parameter('serial_baudrate', 115200)
         self.declare_parameter('serial_timeout', 1.0)
-        self.declare_parameter('timer_period', 0.01)
+        self.declare_parameter('cmd_vel_update_interval', 0.01)
+        self.declare_parameter('odom_update_interval', 0.05)
         self.declare_parameter('odom_frame_id', 'odom')
         self.declare_parameter('base_frame_id', 'base_footprint')
         self.declare_parameter('cmd_vel_topic', '/cmd_vel')
         self.declare_parameter('odom_topic', '/odom')
-        self.declare_parameter('use_ekf', True)
         
         # Get parameters
         self.counts_per_rev = self.get_parameter('encoder_cpr').get_parameter_value().double_value
         self.motor_max_rpm = self.get_parameter('motor_max_rpm').get_parameter_value().integer_value
         self.wheel_base = self.get_parameter('wheel_base').get_parameter_value().double_value
         self.wheel_radius = self.get_parameter('wheel_radius').get_parameter_value().double_value
+        self.slip_ratio = self.get_parameter('slip_ratio').get_parameter_value().double_value
+        self.param_n = self.get_parameter('param_n').get_parameter_value().double_value
         self.serial_port_name = self.get_parameter('serial_port').get_parameter_value().string_value
         self.serial_baudrate = self.get_parameter('serial_baudrate').get_parameter_value().integer_value
         self.serial_timeout = self.get_parameter('serial_timeout').get_parameter_value().double_value
-        self.timer_period = self.get_parameter('timer_period').get_parameter_value().double_value
+        self.cmd_vel_update_interval = self.get_parameter('cmd_vel_update_interval').get_parameter_value().double_value
+        self.odom_update_interval = self.get_parameter('odom_update_interval').get_parameter_value().double_value
         self.odom_frame_id = self.get_parameter('odom_frame_id').get_parameter_value().string_value
         self.base_frame_id = self.get_parameter('base_frame_id').get_parameter_value().string_value
         self.cmd_vel_topic = self.get_parameter('cmd_vel_topic').get_parameter_value().string_value
         self.odom_topic = self.get_parameter('odom_topic').get_parameter_value().string_value
-        self.use_ekf = self.get_parameter('use_ekf').get_parameter_value().bool_value
         
         # Calculate circumference
         self.circumference = 2 * math.pi * self.wheel_radius
@@ -54,7 +58,8 @@ class Esp32SerialNode(Node):
         self.get_logger().info(f"  Wheel Radius: {self.wheel_radius} m")
         self.get_logger().info(f"  Serial Port: {self.serial_port_name}")
         self.get_logger().info(f"  Serial Baudrate: {self.serial_baudrate}")
-        self.get_logger().info(f"  Use EKF: {self.use_ekf}")
+        self.get_logger().info(f"  Slip Ratio: {self.slip_ratio}")
+        self.get_logger().info(f"  Param N: {self.param_n}")
         
         # Initialize odometry data
         self.x = 0.0
@@ -81,11 +86,13 @@ class Esp32SerialNode(Node):
             raise e
         
         # Create publisher, subscriber and timer
-        self.tf_broadcaster = TransformBroadcaster(self)
+        self.cmd_vel_sub = self.create_subscription(Twist, self.cmd_vel_topic, self.cmd_vel_callback, 10)
+        self.cmd_vel_timer = self.create_timer(self.cmd_vel_update_interval, self.read_serial_and_publish)
+        
         self.odom_pub = self.create_publisher(Odometry, self.odom_topic, 10)
-        self.cmd_vel_sub = self.create_subscription(
-            Twist, self.cmd_vel_topic, self.cmd_vel_callback, 10)
-        self.timer = self.create_timer(self.timer_period, self.read_serial_and_publish)
+        self.odom_timer = self.create_timer(self.odom_update_interval, self.publish_odom)
+
+        self.tf_broadcaster = TransformBroadcaster(self)  # Uncomment if using only encoder data and no IMU
 
     def cmd_vel_callback(self, msg):
         linear_vel = msg.linear.x
@@ -108,13 +115,16 @@ class Esp32SerialNode(Node):
         except Exception as e:
             self.get_logger().error(f"Failed to send command to ESP32: {str(e)}")
 
+    def imu_callback(self, msg):
+        self.gyro_angular_vel = msg.angular_velocity.z
+
     def read_serial_and_publish(self):
         if self.serial_port.in_waiting > 0:
             line = self.serial_port.readline().decode('utf-8').strip()
             try:
                 parts = line.split(',')
-                left = int(parts[0])
-                right = int(parts[1])
+                left_encoder_count = int(parts[0])
+                right_encoder_count = int(parts[1])
 
                 # debugging outputs
                 pwm_l = float(parts[2])
@@ -127,28 +137,73 @@ class Esp32SerialNode(Node):
                 #                         Input RPM Left: {input_rpm_l}, Input RPM Right: {input_rpm_r}, Output RPM Left: {output_rpm_l}, \
                 #                         Output RPM Right: {output_rpm_r}")
                 
-                # calculate delta change
-                d_left = (left - self.prev_left) / self.counts_per_rev * self.circumference
-                d_right = (right - self.prev_right) / self.counts_per_rev * self.circumference
+                # distance change of left and right wheels
+                d_left = (left_encoder_count - self.prev_left_count) / self.counts_per_rev * self.circumference
+                d_right = (right_encoder_count - self.prev_right_count) / self.counts_per_rev * self.circumference
+                
+                self.prev_left_count, self.prev_right_count = left_encoder_count, right_encoder_count
 
-                self.prev_left, self.prev_right = left, right
-                
-                # calculate odometry values
-                d_center = (d_left + d_right) / 2
-                d_theta = (d_right - d_left) / self.wheel_base
-                
-                self.theta += d_theta
-                self.x += d_center * math.cos(self.theta)
-                self.y += d_center * math.sin(self.theta)
-                
-                # publish tf and odometry
-                self.publish_odom()
-                if not self.use_ekf:
-                    self.publish_tf()
+                esp32_timer = 0.05  # 50ms
+                vel_l = d_left / esp32_timer
+                vel_r = d_right / esp32_timer
+
+                # calculate angular velocity and compare with IMU data
+                if hasattr(self, 'gyro_angular_vel'):
+                    # === formula 7: slip ratios 的比值 ===
+                    R = self.signum(vel_l * vel_r) * (abs(vel_r / vel_l) ** self.param_n) if abs(vel_l) > 1e-6 else 0.0
+
+                    # === formula 3 + 7 合併, 解右輪 slip ratio ===
+                    denominator = (R * vel_l - vel_r)
+                    if abs(denominator) < 0.1:
+                        # 直行或數值不穩定時，假設小 slip（等量）
+                        slip_r = 0.02
+                        slip_l = 0.02
+                    else:
+                        slip_r = (2 * self.wheel_base/2 * self.gyro_angular_vel + vel_l - vel_r) / denominator
+                        slip_l = R * slip_r
+
+                    # === 限制 slip ratio 範圍 ===
+                    slip_r = max(min(slip_r, 0.5), -0.5)
+                    slip_l = max(min(slip_l, 0.5), -0.5)
+
+                    # === slip 修正後的 travel ===
+                    d_left_corr = d_left * (1 - slip_l)
+                    d_right_corr = d_right * (1 - slip_r)
+                    
+                    self.get_logger().info(f"Slip Ratio L: {slip_l}, R: {slip_r}, Vel L: {vel_l}, R: {vel_r}")
+
+                    # === odometry update ===
+                    d_center = (d_left_corr + d_right_corr) / 2.0
+                    d_theta = (d_right_corr - d_left_corr) / self.wheel_base
+
+                    self.theta += d_theta
+                    self.x += d_center * math.cos(self.theta)
+                    self.y += d_center * math.sin(self.theta)
+
+                    # publish odometry
+                    self.publish_odom()
+
+                    # update previous encoder counts
+                    self.prev_left_count = left_encoder_count
+                    self.prev_right_count = right_encoder_count
+
+                else:
+                    self.get_logger().warn("IMU data not available for angular velocity comparison.")
+
             except ValueError:
-                self.get_logger().warn(f"Receiving Invalid data: {line}")
+                self.get_logger().warn(f"Receiving Invalid data format: {line}")
+
+    def signum(self, value):
+        """
+        Returns 1 for positive, -1 for negative, and 0 for zero.
+        """
+        return (value > 0) - (value < 0)
 
     def publish_tf(self):
+        """
+        Publish transform from odom to base_link.
+        Use only if using only encoder data and no IMU.
+        """
         t = TransformStamped()
         t.header.stamp = self.get_clock().now().to_msg()
         t.header.frame_id = self.odom_frame_id
