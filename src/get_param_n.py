@@ -38,7 +38,7 @@ class Esp32SerialNode(Node):
         self.declare_parameter('cmd_vel_topic', '/cmd_vel')
         self.declare_parameter('imu_topic', '/imu/data_raw')
         self.declare_parameter('csv_filename', 'slip_ratio_data.csv')
-        self.declare_parameter('output_directory', os.path.expanduser('~/csv/get_param_n/'))
+        self.declare_parameter('output_directory', os.path.expanduser('~/csv/param_n/'))
         
         # Get parameters
         self.counts_per_rev = self.get_parameter('encoder_cpr').get_parameter_value().double_value

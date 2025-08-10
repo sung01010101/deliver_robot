@@ -154,7 +154,7 @@ class Esp32SerialNode(Node):
 
                     # === formula 3 + 7 合併, 解右輪 slip ratio ===
                     denominator = (R * vel_l - vel_r)
-                    if abs(denominator) < 0.1:
+                    if abs(denominator) < 0.1 or self.gyro_angular_vel < 0.1:
                         # 直行或數值不穩定時，假設小 slip（等量）
                         slip_r = 0.02
                         slip_l = 0.02
