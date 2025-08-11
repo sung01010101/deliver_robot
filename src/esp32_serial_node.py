@@ -145,6 +145,7 @@ class Esp32SerialNode(Node):
                 self.publish_odom()
                 if not self.ekf_imu:
                     self.publish_tf()
+                
             except ValueError:
                 self.get_logger().warn(f"Receiving Invalid data: {line}")
 

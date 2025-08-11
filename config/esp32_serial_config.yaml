@@ -1,14 +1,14 @@
 esp32_serial_node:
   ros__parameters:
     # Hardware Settings
-    motor_max_rpm: 330          # rpm of motor when fully operated
-    wheel_base: 0.465           # (m) distance between wheels
-    wheel_radius: 0.02          # (m) radius of wheels
-    encoder_cpr: 780.0          # count per revolution, (13 PPR * 30 gear ratio * 4 encoders tick per revolution / 2 for only checking phase A = 700)
+    motor_max_rpm: 330            # rpm of motor when fully operated
+    wheel_base: 0.465             # (m) distance between wheels
+    wheel_radius: 0.02            # (m) radius of wheels
+    encoder_cpr: 780.0            # count per revolution, (13 PPR * 30 gear ratio * 4 encoders tick per revolution / 2 for only checking phase A = 700)
 
     # Slip Ratio
     base_slip_ratio: 0.1          # apply when moving in nearly straight line
-    param_n: 0.5                # parameter to compensate speed difference between wheels
+    param_n: 0.5                  # parameter to compensate speed difference between wheels
 
     # Serial Communication
     serial_port: "/dev/esp32"
@@ -16,10 +16,13 @@ esp32_serial_node:
     serial_timeout: 1.0
     
     # Timer Settings
-    serial_timer: 0.01           # refresh rate for serial communication with ESP32
+    serial_timer: 0.01            # refresh rate for serial communication with ESP32
     odom_update_interval: 0.05    # refresh rate for publish odom topic to ROS
 
-    # Frame IDs
+    # topic settings
+    ekf_imu: true                 # if true, the node will publish odom topic only
+                                  
+    # Frame IDs (tf topic, use only if ekf_imu is set to false)
     odom_frame_id: "odom"
     base_frame_id: "base_footprint"
     
