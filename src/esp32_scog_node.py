@@ -18,7 +18,7 @@ class Esp32SerialNode(Node):
         self.declare_parameter('motor_max_rpm', 330)
         self.declare_parameter('wheel_base', 0.465)
         self.declare_parameter('wheel_radius', 0.019)
-        self.declare_parameter('slip_ratio', 0.18)
+        self.declare_parameter('base_slip_ratio', 0.1)
         self.declare_parameter('param_n', 0.5)
         self.declare_parameter('serial_port', '/dev/esp32')
         self.declare_parameter('serial_baudrate', 115200)
@@ -35,7 +35,7 @@ class Esp32SerialNode(Node):
         self.motor_max_rpm = self.get_parameter('motor_max_rpm').get_parameter_value().integer_value
         self.wheel_base = self.get_parameter('wheel_base').get_parameter_value().double_value
         self.wheel_radius = self.get_parameter('wheel_radius').get_parameter_value().double_value
-        self.slip_ratio = self.get_parameter('slip_ratio').get_parameter_value().double_value
+        self.base_slip_ratio = self.get_parameter('base_slip_ratio').get_parameter_value().double_value
         self.param_n = self.get_parameter('param_n').get_parameter_value().double_value
         self.serial_port_name = self.get_parameter('serial_port').get_parameter_value().string_value
         self.serial_baudrate = self.get_parameter('serial_baudrate').get_parameter_value().integer_value
@@ -156,8 +156,8 @@ class Esp32SerialNode(Node):
                     denominator = (R * vel_l - vel_r)
                     if abs(denominator) < 0.1 or self.gyro_angular_vel < 0.1:
                         # 直行或數值不穩定時，假設小 slip（等量）
-                        slip_r = 0.02
-                        slip_l = 0.02
+                        slip_r = self.base_slip_ratio
+                        slip_l = self.base_slip_ratio
                     else:
                         slip_r = (2 * self.wheel_base/2 * self.gyro_angular_vel + vel_l - vel_r) / denominator
                         slip_l = R * slip_r

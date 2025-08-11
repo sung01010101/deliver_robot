@@ -26,7 +26,7 @@ class Esp32SerialNode(Node):
         self.declare_parameter('base_frame_id', 'base_footprint')
         self.declare_parameter('cmd_vel_topic', '/cmd_vel')
         self.declare_parameter('odom_topic', '/odom')
-        self.declare_parameter('use_ekf', True)
+        self.declare_parameter('ekf_imu', True)
         
         # Get parameters
         self.counts_per_rev = self.get_parameter('encoder_cpr').get_parameter_value().double_value
@@ -41,7 +41,7 @@ class Esp32SerialNode(Node):
         self.base_frame_id = self.get_parameter('base_frame_id').get_parameter_value().string_value
         self.cmd_vel_topic = self.get_parameter('cmd_vel_topic').get_parameter_value().string_value
         self.odom_topic = self.get_parameter('odom_topic').get_parameter_value().string_value
-        self.use_ekf = self.get_parameter('use_ekf').get_parameter_value().bool_value
+        self.ekf_imu = self.get_parameter('ekf_imu').get_parameter_value().bool_value
         
         # Calculate circumference
         self.circumference = 2 * math.pi * self.wheel_radius
@@ -54,7 +54,7 @@ class Esp32SerialNode(Node):
         self.get_logger().info(f"  Wheel Radius: {self.wheel_radius} m")
         self.get_logger().info(f"  Serial Port: {self.serial_port_name}")
         self.get_logger().info(f"  Serial Baudrate: {self.serial_baudrate}")
-        self.get_logger().info(f"  Use EKF: {self.use_ekf}")
+        self.get_logger().info(f"  Use EKF: {self.ekf_imu}")
         
         # Initialize odometry data
         self.x = 0.0
@@ -143,7 +143,7 @@ class Esp32SerialNode(Node):
                 
                 # publish tf and odometry
                 self.publish_odom()
-                if not self.use_ekf:
+                if not self.ekf_imu:
                     self.publish_tf()
             except ValueError:
                 self.get_logger().warn(f"Receiving Invalid data: {line}")

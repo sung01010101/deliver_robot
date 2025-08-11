@@ -17,8 +17,8 @@ def generate_launch_description():
     ekf_config_file = os.path.join(package_dir, 'config', 'ekf.yaml')
 
     # launch arguments
-    declare_use_ekf = DeclareLaunchArgument(
-        'use_ekf',
+    declare_ekf_imu = DeclareLaunchArgument(
+        'ekf_imu',
         default_value='True',
         description='Use EKF if True',
     )
@@ -36,7 +36,7 @@ def generate_launch_description():
         name='ekf_node',
         output='screen',
         parameters=[ekf_config_file],
-        condition=IfCondition(LaunchConfiguration('use_ekf'))
+        condition=IfCondition(LaunchConfiguration('ekf_imu'))
     )
 
     esp32_serial_node = Node(
@@ -51,7 +51,7 @@ def generate_launch_description():
         )
 
     return LaunchDescription([
-        declare_use_ekf,
+        declare_ekf_imu,
         declare_use_sim_time,
         robot_localization_node,
         esp32_serial_node
