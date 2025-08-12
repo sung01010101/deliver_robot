@@ -44,11 +44,14 @@ def generate_launch_description():
         executable='esp32_serial_node',
         name='esp32_serial_node',
         output='screen',
-        parameters=[esp32_config_file],
-            remappings=[
-                ('/cmd_vel', '/cmd_vel')
-            ]
-        )
+        parameters=[
+            esp32_config_file,
+            {'ekf_imu': LaunchConfiguration('ekf_imu')}
+        ],
+        remappings=[
+            ('/cmd_vel', '/cmd_vel')
+        ]
+    )
 
     return LaunchDescription([
         declare_ekf_imu,

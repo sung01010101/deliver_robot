@@ -54,7 +54,7 @@ class Esp32SerialNode(Node):
         self.get_logger().info(f"  Wheel Radius: {self.wheel_radius} m")
         self.get_logger().info(f"  Serial Port: {self.serial_port_name}")
         self.get_logger().info(f"  Serial Baudrate: {self.serial_baudrate}")
-        self.get_logger().info(f"  Use EKF: {self.ekf_imu}")
+        self.get_logger().info(f"  EKF imu: {self.ekf_imu}")
         
         # Initialize odometry data
         self.x = 0.0
