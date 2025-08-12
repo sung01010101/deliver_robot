@@ -144,7 +144,7 @@ class Esp32SerialNode(Node):
                 
                 # publish tf and odometry
                 self.publish_odom()
-                if not self.use_ekf:
+                if self.use_ekf == False:
                     self.publish_tf()
                 
             except ValueError:
