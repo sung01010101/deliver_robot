@@ -13,20 +13,20 @@ def generate_launch_description():
     
     # directories
     package_dir = get_package_share_directory('deliver_robot')
-    esp32_config_file = os.path.join(package_dir, 'config', 'esp32_serial_config.yaml')
     ekf_config_file = os.path.join(package_dir, 'config', 'ekf.yaml')
+    esp32_config_file = os.path.join(package_dir, 'config', 'esp32_serial_config.yaml')
 
     # launch arguments
-    declare_ekf_imu = DeclareLaunchArgument(
-        'ekf_imu',
-        default_value='True',
-        description='Use EKF if True',
-    )
-
     declare_use_sim_time = DeclareLaunchArgument(
         'use_sim_time',
         default_value='False',
         description='Use simulation time if True'
+    )
+
+    declare_ekf_imu = DeclareLaunchArgument(
+        'ekf_imu',
+        default_value='True',
+        description='Use EKF if True',
     )
 
     # launch nodes
