@@ -41,7 +41,7 @@ def generate_launch_description():
 
     esp32_serial_node = Node(
         package='deliver_robot',
-        executable='esp32_serial_node',
+        executable='esp32_serial_node.py',
         name='esp32_serial_node',
         output='screen',
         parameters=[

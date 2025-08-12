@@ -22,7 +22,7 @@ def generate_launch_description():
 
     esp32_scog_node = Node(
         package='deliver_robot',
-        executable='esp32_scog_node',
+        executable='esp32_scog_node.py',
         name='esp32_scog_node',
         output='screen',
         parameters=[esp32_config_file],

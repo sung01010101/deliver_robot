@@ -31,7 +31,7 @@ def generate_launch_description():
     # AMCL Pose Logger Node
     pose_logger_node = Node(
         package='deliver_robot',
-        executable='get_amcl_pose',
+        executable='get_amcl_pose.py',
         name='amcl_pose_logger',
         output='screen',
         parameters=[

@@ -10,7 +10,7 @@ def generate_launch_description():
     return LaunchDescription([
         Node(
             package='deliver_robot',
-            executable='demo_cmd_vel',
+            executable='demo_cmd_vel.py',
             name='demo_cmd_vel',
             output='screen',
             parameters=[],
