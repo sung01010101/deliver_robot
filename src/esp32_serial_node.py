@@ -26,7 +26,7 @@ class Esp32SerialNode(Node):
         self.declare_parameter('base_frame_id', 'base_footprint')
         self.declare_parameter('cmd_vel_topic', '/cmd_vel')
         self.declare_parameter('odom_topic', '/odom')
-        self.declare_parameter('ekf_imu', True)
+        self.declare_parameter('ekf_imu', False)
         
         # Get parameters
         self.counts_per_rev = self.get_parameter('encoder_cpr').get_parameter_value().double_value

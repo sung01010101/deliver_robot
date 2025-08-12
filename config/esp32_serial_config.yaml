@@ -18,9 +18,6 @@ esp32_serial_node:
     # Timer Settings
     serial_timer: 0.01            # refresh rate for serial communication with ESP32
     odom_timer: 0.05               # refresh rate for publish odom topic to ROS
-
-    # topic settings
-    ekf_imu: true                 # if true, the node will publish odom topic only
                                   
     # Frame IDs (tf topic, use only if ekf_imu is set to false)
     odom_frame_id: "odom"
