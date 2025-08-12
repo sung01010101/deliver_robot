@@ -21,7 +21,7 @@ class Esp32SerialNode(Node):
         self.declare_parameter('serial_port', '/dev/esp32')
         self.declare_parameter('serial_baudrate', 115200)
         self.declare_parameter('serial_timeout', 1.0)
-        self.declare_parameter('timer_period', 0.01)
+        self.declare_parameter('odom_timer', 0.01)
         self.declare_parameter('odom_frame_id', 'odom')
         self.declare_parameter('base_frame_id', 'base_footprint')
         self.declare_parameter('cmd_vel_topic', '/cmd_vel')
@@ -36,7 +36,7 @@ class Esp32SerialNode(Node):
         self.serial_port_name = self.get_parameter('serial_port').get_parameter_value().string_value
         self.serial_baudrate = self.get_parameter('serial_baudrate').get_parameter_value().integer_value
         self.serial_timeout = self.get_parameter('serial_timeout').get_parameter_value().double_value
-        self.timer_period = self.get_parameter('timer_period').get_parameter_value().double_value
+        self.odom_timer = self.get_parameter('odom_timer').get_parameter_value().double_value
         self.odom_frame_id = self.get_parameter('odom_frame_id').get_parameter_value().string_value
         self.base_frame_id = self.get_parameter('base_frame_id').get_parameter_value().string_value
         self.cmd_vel_topic = self.get_parameter('cmd_vel_topic').get_parameter_value().string_value
@@ -81,11 +81,12 @@ class Esp32SerialNode(Node):
             raise e
         
         # Create publisher, subscriber and timer
-        self.tf_broadcaster = TransformBroadcaster(self)
+        self.cmd_vel_sub = self.create_subscription(Twist, self.cmd_vel_topic, self.cmd_vel_callback, 10)
+        
         self.odom_pub = self.create_publisher(Odometry, self.odom_topic, 10)
-        self.cmd_vel_sub = self.create_subscription(
-            Twist, self.cmd_vel_topic, self.cmd_vel_callback, 10)
-        self.timer = self.create_timer(self.timer_period, self.read_serial_and_publish)
+        self.odom_pub_timer = self.create_timer(self.odom_timer, self.publish_odom)
+
+        self.tf_broadcaster = TransformBroadcaster(self)
 
     def cmd_vel_callback(self, msg):
         linear_vel = msg.linear.x

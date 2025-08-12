@@ -17,7 +17,7 @@ esp32_serial_node:
     
     # Timer Settings
     serial_timer: 0.01            # refresh rate for serial communication with ESP32
-    odom_update_interval: 0.05    # refresh rate for publish odom topic to ROS
+    odom_timer: 0.05               # refresh rate for publish odom topic to ROS
 
     # topic settings
     ekf_imu: true                 # if true, the node will publish odom topic only
@@ -29,3 +29,4 @@ esp32_serial_node:
     # Topic Names
     cmd_vel_topic: "/cmd_vel"
     odom_topic: "/odom"
+    imu_topic: "/imu/data_raw"     # topic for IMU data, used for scog node only, not esp32_serial_node

@@ -4,6 +4,7 @@ import rclpy
 from rclpy.node import Node
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import Twist, TransformStamped
+from sensor_msgs.msg import Imu
 from tf2_ros import TransformBroadcaster
 import serial
 import math
@@ -24,11 +25,12 @@ class Esp32SerialNode(Node):
         self.declare_parameter('serial_baudrate', 115200)
         self.declare_parameter('serial_timeout', 1.0)
         self.declare_parameter('cmd_vel_update_interval', 0.01)
-        self.declare_parameter('odom_update_interval', 0.05)
+        self.declare_parameter('odom_timer', 0.05)
         self.declare_parameter('odom_frame_id', 'odom')
         self.declare_parameter('base_frame_id', 'base_footprint')
         self.declare_parameter('cmd_vel_topic', '/cmd_vel')
         self.declare_parameter('odom_topic', '/odom')
+        self.declare_parameter('imu_topic', '/imu/data_raw')
         
         # Get parameters
         self.counts_per_rev = self.get_parameter('encoder_cpr').get_parameter_value().double_value
@@ -41,11 +43,12 @@ class Esp32SerialNode(Node):
         self.serial_baudrate = self.get_parameter('serial_baudrate').get_parameter_value().integer_value
         self.serial_timeout = self.get_parameter('serial_timeout').get_parameter_value().double_value
         self.cmd_vel_update_interval = self.get_parameter('cmd_vel_update_interval').get_parameter_value().double_value
-        self.odom_update_interval = self.get_parameter('odom_update_interval').get_parameter_value().double_value
+        self.odom_timer = self.get_parameter('odom_timer').get_parameter_value().double_value
         self.odom_frame_id = self.get_parameter('odom_frame_id').get_parameter_value().string_value
         self.base_frame_id = self.get_parameter('base_frame_id').get_parameter_value().string_value
         self.cmd_vel_topic = self.get_parameter('cmd_vel_topic').get_parameter_value().string_value
         self.odom_topic = self.get_parameter('odom_topic').get_parameter_value().string_value
+        self.imu_topic = self.get_parameter('imu_topic').get_parameter_value().string_value
         
         # Calculate circumference
         self.circumference = 2 * math.pi * self.wheel_radius
@@ -58,7 +61,9 @@ class Esp32SerialNode(Node):
         self.get_logger().info(f"  Wheel Radius: {self.wheel_radius} m")
         self.get_logger().info(f"  Serial Port: {self.serial_port_name}")
         self.get_logger().info(f"  Serial Baudrate: {self.serial_baudrate}")
-        self.get_logger().info(f"  Slip Ratio: {self.slip_ratio}")
+        self.get_logger().info(f"  ----------------------------------------------------")
+        self.get_logger().info(f"  Base Slip Ratio: {self.base_slip_ratio}")
+        self.get_logger().info(f"  IMU Topic: {self.imu_topic}")
         self.get_logger().info(f"  Param N: {self.param_n}")
         
         # Initialize odometry data
@@ -87,10 +92,12 @@ class Esp32SerialNode(Node):
         
         # Create publisher, subscriber and timer
         self.cmd_vel_sub = self.create_subscription(Twist, self.cmd_vel_topic, self.cmd_vel_callback, 10)
-        self.cmd_vel_timer = self.create_timer(self.cmd_vel_update_interval, self.read_serial_and_publish)
+        self.cmd_vel_sub_timer = self.create_timer(self.cmd_vel_update_interval, self.read_serial_and_publish)
         
         self.odom_pub = self.create_publisher(Odometry, self.odom_topic, 10)
-        self.odom_timer = self.create_timer(self.odom_update_interval, self.publish_odom)
+        self.odom_pub_timer = self.create_timer(self.odom_timer, self.publish_odom)
+
+        self.imu_sub = self.create_subscription(Imu, self.imu_topic, self.imu_callback, 10)
 
         self.tf_broadcaster = TransformBroadcaster(self)  # Uncomment if using only encoder data and no IMU
 
