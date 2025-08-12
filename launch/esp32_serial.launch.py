@@ -25,7 +25,7 @@ def generate_launch_description():
 
     declare_use_ekf = DeclareLaunchArgument(
         'use_ekf',
-        default_value='True',
+        default_value='False',
         description='Use EKF if True',
     )
 
