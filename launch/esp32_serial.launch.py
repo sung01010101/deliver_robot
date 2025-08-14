@@ -17,14 +17,14 @@ def generate_launch_description():
     esp32_config_file = os.path.join(package_dir, 'config', 'esp32_serial_config.yaml')
 
     # launch arguments
-    declare_use_sim_time = DeclareLaunchArgument(
+    declare_use_sim_time_arg = DeclareLaunchArgument(
         'use_sim_time',
         default_value='False',
         description='Use simulation time if True'
     )
 
-    declare_use_ekf = DeclareLaunchArgument(
-        'use_ekf',
+    declare_use_imu_arg = DeclareLaunchArgument(
+        'use_imu',
         default_value='False',
         description='Use EKF if True',
     )
@@ -39,7 +39,7 @@ def generate_launch_description():
             ekf_config_file,
             {'use_sim_time': LaunchConfiguration('use_sim_time')}
         ],
-        condition=IfCondition(LaunchConfiguration('use_ekf'))
+        condition=IfCondition(LaunchConfiguration('use_imu'))
     )
 
     esp32_serial_node = Node(
@@ -49,7 +49,7 @@ def generate_launch_description():
         output='screen',
         parameters=[
             esp32_config_file,
-            {'use_ekf': LaunchConfiguration('use_ekf')}
+            {'use_imu': LaunchConfiguration('use_imu')}
         ],
         remappings=[
             ('/cmd_vel', '/cmd_vel')
@@ -57,8 +57,8 @@ def generate_launch_description():
     )
 
     return LaunchDescription([
-        declare_use_ekf,
-        declare_use_sim_time,
+        declare_use_imu_arg,
+        declare_use_sim_time_arg,
         robot_localization_node,
         esp32_serial_node
     ])

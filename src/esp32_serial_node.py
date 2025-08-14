@@ -4,6 +4,7 @@ import rclpy
 from rclpy.node import Node
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import Twist, TransformStamped
+from sensor_msgs.msg import Imu
 from tf2_ros import TransformBroadcaster
 import serial
 import math
@@ -26,7 +27,8 @@ class Esp32SerialNode(Node):
         self.declare_parameter('base_frame_id', 'base_footprint')
         self.declare_parameter('cmd_vel_topic', '/cmd_vel')
         self.declare_parameter('odom_topic', '/odom')
-        self.declare_parameter('use_ekf', False)
+        self.declare_parameter('imu_topic', '/imu/data_raw')
+        self.declare_parameter('use_imu', False)
         
         # Get parameters
         self.counts_per_rev = self.get_parameter('encoder_cpr').get_parameter_value().double_value
@@ -41,7 +43,8 @@ class Esp32SerialNode(Node):
         self.base_frame_id = self.get_parameter('base_frame_id').get_parameter_value().string_value
         self.cmd_vel_topic = self.get_parameter('cmd_vel_topic').get_parameter_value().string_value
         self.odom_topic = self.get_parameter('odom_topic').get_parameter_value().string_value
-        self.use_ekf = self.get_parameter('use_ekf').get_parameter_value().bool_value
+        self.imu_topic = self.get_parameter('imu_topic').get_parameter_value().string_value
+        self.use_imu = self.get_parameter('use_imu').get_parameter_value().bool_value
         
         # Calculate circumference
         self.circumference = 2 * math.pi * self.wheel_radius
@@ -54,7 +57,8 @@ class Esp32SerialNode(Node):
         self.get_logger().info(f"  Wheel Radius: {self.wheel_radius} m")
         self.get_logger().info(f"  Serial Port: {self.serial_port_name}")
         self.get_logger().info(f"  Serial Baudrate: {self.serial_baudrate}")
-        self.get_logger().info(f"  EKF imu: {self.use_ekf}")
+        self.get_logger().info(f"  IMU Topic: {self.imu_topic}")
+        self.get_logger().info(f"  Use Imu for Rotation: {self.use_imu}")
         
         # Initialize odometry data
         self.x = 0.0
@@ -62,6 +66,10 @@ class Esp32SerialNode(Node):
         self.theta = 0.0
         self.prev_left = 0
         self.prev_right = 0
+        
+        # Initialize IMU data
+        self.imu_theta = 0.0
+        self.imu_available = False
         
         # Initialize velocity data
         self.vx = 0.0
@@ -88,6 +96,11 @@ class Esp32SerialNode(Node):
         
         # Create publisher, subscriber and timer
         self.cmd_vel_sub = self.create_subscription(Twist, self.cmd_vel_topic, self.cmd_vel_callback, 10)
+        
+        # Create IMU subscriber if use_imu is True
+        if self.use_imu:
+            self.imu_sub = self.create_subscription(Imu, self.imu_topic, self.imu_callback, 10)
+            self.get_logger().info(f"IMU subscriber created on topic: {self.imu_topic}")
         
         self.odom_pub = self.create_publisher(Odometry, self.odom_topic, 10)
         
@@ -116,6 +129,20 @@ class Esp32SerialNode(Node):
             self.get_logger().debug(f"Sent to ESP32: {command.strip()}")
         except Exception as e:
             self.get_logger().error(f"Failed to send command to ESP32: {str(e)}")
+
+    def imu_callback(self, msg):
+        """Callback to receive IMU orientation data"""
+        # Extract yaw from quaternion
+        z = msg.orientation.z
+        w = msg.orientation.w
+        self.imu_theta = 2 * math.atan2(z, w)
+        
+        # Normalize angle to [-pi, pi]
+        self.imu_theta = math.atan2(math.sin(self.imu_theta), math.cos(self.imu_theta))
+        
+        if not self.imu_available:
+            self.get_logger().info("IMU data is now available for odometry calculation")
+        self.imu_available = True
 
     def read_serial_and_publish(self):
         if self.serial_port.in_waiting > 0:
@@ -150,24 +177,38 @@ class Esp32SerialNode(Node):
                 d_center = (d_left + d_right) / 2
                 d_theta = (d_right - d_left) / self.wheel_base
                 
-                # Update position
-                self.theta += d_theta
+                # Update position and rotation
+                if self.use_imu and self.imu_available:
+                    # Use IMU for rotation, but still calculate encoder-based angular velocity for velocity estimation
+                    encoder_d_theta = d_theta
+                    self.theta = self.imu_theta  # Use IMU orientation directly
+                    
+                    # For velocity calculation, use encoder-based angular velocity
+                    if dt > 0:
+                        self.vtheta = encoder_d_theta / dt
+                else:
+                    # Use encoder-based rotation (original behavior)
+                    self.theta += d_theta
+                    if dt > 0:
+                        self.vtheta = d_theta / dt
+                
+                # Update linear position (always uses encoder data)
                 self.x += d_center * math.cos(self.theta)
                 self.y += d_center * math.sin(self.theta)
                 
-                # Calculate velocities
+                # Calculate linear velocities
                 if dt > 0:
                     self.vx = d_center / dt
                     self.vy = 0.0  # Differential drive robot doesn't move sideways
-                    self.vtheta = d_theta / dt
                 
                 # Update time
                 self.prev_time = current_time
                 
                 # publish tf and odometry
                 self.publish_odom()
-                if self.use_ekf == False:
-                    self.publish_tf()
+                # if self.use_imu == False:
+                #     self.publish_tf()
+                self.publish_tf()
                 
             except ValueError:
                 self.get_logger().warn(f"Receiving Invalid data: {line}")
