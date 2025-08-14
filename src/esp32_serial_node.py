@@ -260,35 +260,6 @@ class Esp32SerialNode(Node):
             odom.pose.pose.orientation.z = math.sin(self.theta / 2)
             odom.pose.pose.orientation.w = math.cos(self.theta / 2)
         
-        # Velocity
-        odom.twist.twist.linear.x = self.vx
-        odom.twist.twist.linear.y = self.vy
-        odom.twist.twist.linear.z = 0.0
-        odom.twist.twist.angular.x = 0.0
-        odom.twist.twist.angular.y = 0.0
-        odom.twist.twist.angular.z = self.vtheta
-        
-        # Covariance matrices (you may want to tune these values)
-        # Position covariance (6x6 matrix in row-major order)
-        # odom.pose.covariance = [
-        #     0.01, 0.0,  0.0,  0.0,  0.0,  0.0,    # x
-        #     0.0,  0.01, 0.0,  0.0,  0.0,  0.0,    # y
-        #     0.0,  0.0,  0.0,  0.0,  0.0,  0.0,    # z
-        #     0.0,  0.0,  0.0,  0.0,  0.0,  0.0,    # roll
-        #     0.0,  0.0,  0.0,  0.0,  0.0,  0.0,    # pitch
-        #     0.0,  0.0,  0.0,  0.0,  0.0,  0.01    # yaw
-        # ]
-        
-        # # Velocity covariance (6x6 matrix in row-major order)
-        # odom.twist.covariance = [
-        #     0.01, 0.0,  0.0,  0.0,  0.0,  0.0,    # vx
-        #     0.0,  0.01, 0.0,  0.0,  0.0,  0.0,    # vy
-        #     0.0,  0.0,  0.0,  0.0,  0.0,  0.0,    # vz
-        #     0.0,  0.0,  0.0,  0.0,  0.0,  0.0,    # vroll
-        #     0.0,  0.0,  0.0,  0.0,  0.0,  0.0,    # vpitch
-        #     0.0,  0.0,  0.0,  0.0,  0.0,  0.01    # vyaw
-        # ]
-        
         self.odom_pub.publish(odom)
 
     def constrain(self, val, min_val, max_val):
