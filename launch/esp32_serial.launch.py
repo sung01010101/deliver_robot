@@ -5,7 +5,7 @@ from launch.actions import DeclareLaunchArgument
 from launch import LaunchDescription
 from launch_ros.actions import Node
 from launch.conditions import IfCondition
-from launch.substitutions import LaunchConfiguration, PythonExpression
+from launch.substitutions import LaunchConfiguration
 from ament_index_python.packages import get_package_share_directory
 
 
@@ -17,16 +17,16 @@ def generate_launch_description():
     esp32_config_file = os.path.join(package_dir, 'config', 'esp32_serial_config.yaml')
 
     # launch arguments
-    declare_use_sim_time_arg = DeclareLaunchArgument(
+    declare_use_sim_time = DeclareLaunchArgument(
         'use_sim_time',
         default_value='False',
         description='Use simulation time if True'
     )
 
-    declare_rotation_arg = DeclareLaunchArgument(
-        'rotation',
-        default_value='imu',
-        description='Rotation source for the robot, options: "imu" or "odom" or "both"',
+    declare_use_ekf = DeclareLaunchArgument(
+        'use_ekf',
+        default_value='False',
+        description='Use EKF if True',
     )
 
     # launch nodes
@@ -36,7 +36,7 @@ def generate_launch_description():
         name='ekf_node',
         output='screen',
         parameters=[ekf_config_file],
-        condition=IfCondition(PythonExpression(["'", LaunchConfiguration('rotation'), "' == 'both'"]))
+        condition=IfCondition(LaunchConfiguration('use_ekf'))
     )
 
     esp32_serial_node = Node(
@@ -46,7 +46,7 @@ def generate_launch_description():
         output='screen',
         parameters=[
             esp32_config_file,
-            {'rotation_source': LaunchConfiguration('rotation')}
+            {'use_ekf': LaunchConfiguration('use_ekf')}
         ],
         remappings=[
             ('/cmd_vel', '/cmd_vel')
@@ -54,8 +54,8 @@ def generate_launch_description():
     )
 
     return LaunchDescription([
-        declare_rotation_arg,
-        declare_use_sim_time_arg,
+        declare_use_ekf,
+        declare_use_sim_time,
         robot_localization_node,
         esp32_serial_node
     ])
