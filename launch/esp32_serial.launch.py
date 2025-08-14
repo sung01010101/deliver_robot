@@ -35,7 +35,10 @@ def generate_launch_description():
         executable='ekf_node',
         name='ekf_node',
         output='screen',
-        parameters=[ekf_config_file],
+        parameters=[
+            ekf_config_file,
+            {'use_sim_time': LaunchConfiguration('use_sim_time')}
+        ],
         condition=IfCondition(LaunchConfiguration('use_ekf'))
     )
 
