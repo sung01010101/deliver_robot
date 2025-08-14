@@ -68,7 +68,8 @@ class Esp32SerialNode(Node):
         self.prev_right = 0
         
         # Initialize IMU data
-        self.imu_theta = 0.0
+        self.imu_quat_z = 0.0
+        self.imu_quat_w = 1.0
         self.imu_available = False
         
         # Initialize velocity data
@@ -132,13 +133,9 @@ class Esp32SerialNode(Node):
 
     def imu_callback(self, msg):
         """Callback to receive IMU orientation data"""
-        # Extract yaw from quaternion
-        z = msg.orientation.z
-        w = msg.orientation.w
-        self.imu_theta = 2 * math.atan2(z, w)
-        
-        # Normalize angle to [-pi, pi]
-        self.imu_theta = math.atan2(math.sin(self.imu_theta), math.cos(self.imu_theta))
+        # Store quaternion components directly
+        self.imu_quat_z = msg.orientation.z
+        self.imu_quat_w = msg.orientation.w
         
         if not self.imu_available:
             self.get_logger().info("IMU data is now available for odometry calculation")
@@ -180,7 +177,9 @@ class Esp32SerialNode(Node):
                 if self.use_imu and self.imu_available:
                     # Use IMU for rotation, but still calculate encoder-based angular velocity for velocity estimation
                     encoder_d_theta = d_theta
-                    self.theta = self.imu_theta  # Use IMU orientation directly
+                    # Convert IMU quaternion to theta for position calculation
+                    imu_theta = 2 * math.atan2(self.imu_quat_z, self.imu_quat_w)
+                    self.theta = imu_theta
                     
                     # For velocity calculation, use encoder-based angular velocity
                     if dt > 0:
@@ -205,8 +204,8 @@ class Esp32SerialNode(Node):
                 
                 # publish tf and odometry
                 self.publish_odom()
-                # if self.use_imu == False:
-                #     self.publish_tf()
+                
+                # Always publish TF transform (use IMU data when available and use_imu=True)
                 self.publish_tf()
                 
             except ValueError:
@@ -222,11 +221,18 @@ class Esp32SerialNode(Node):
         t.transform.translation.y = self.y
         t.transform.translation.z = 0.0
         
-        # Convert to quaternion
-        t.transform.rotation.x = 0.0
-        t.transform.rotation.y = 0.0
-        t.transform.rotation.z = math.sin(self.theta / 2)
-        t.transform.rotation.w = math.cos(self.theta / 2)
+        # Use IMU quaternion directly if available and use_imu is true
+        if self.use_imu and self.imu_available:
+            t.transform.rotation.x = 0.0
+            t.transform.rotation.y = 0.0
+            t.transform.rotation.z = self.imu_quat_z
+            t.transform.rotation.w = self.imu_quat_w
+        else:
+            # Convert encoder-based theta to quaternion
+            t.transform.rotation.x = 0.0
+            t.transform.rotation.y = 0.0
+            t.transform.rotation.z = math.sin(self.theta / 2)
+            t.transform.rotation.w = math.cos(self.theta / 2)
         
         self.tf_broadcaster.sendTransform(t)
 
@@ -241,11 +247,18 @@ class Esp32SerialNode(Node):
         odom.pose.pose.position.y = self.y
         odom.pose.pose.position.z = 0.0
 
-        # Orientation (convert to quaternion)
-        odom.pose.pose.orientation.x = 0.0
-        odom.pose.pose.orientation.y = 0.0
-        odom.pose.pose.orientation.z = math.sin(self.theta / 2)
-        odom.pose.pose.orientation.w = math.cos(self.theta / 2)
+        # Orientation - use IMU quaternion directly if available and use_imu is true
+        if self.use_imu and self.imu_available:
+            odom.pose.pose.orientation.x = 0.0
+            odom.pose.pose.orientation.y = 0.0
+            odom.pose.pose.orientation.z = self.imu_quat_z
+            odom.pose.pose.orientation.w = self.imu_quat_w
+        else:
+            # Convert encoder-based theta to quaternion
+            odom.pose.pose.orientation.x = 0.0
+            odom.pose.pose.orientation.y = 0.0
+            odom.pose.pose.orientation.z = math.sin(self.theta / 2)
+            odom.pose.pose.orientation.w = math.cos(self.theta / 2)
         
         # Velocity
         odom.twist.twist.linear.x = self.vx
