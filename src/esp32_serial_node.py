@@ -63,6 +63,12 @@ class Esp32SerialNode(Node):
         self.prev_left = 0
         self.prev_right = 0
         
+        # Initialize velocity data
+        self.vx = 0.0
+        self.vy = 0.0
+        self.vtheta = 0.0
+        self.prev_time = self.get_clock().now()
+        
         # Connect serial port
         try:
             self.serial_port = serial.Serial(
@@ -84,7 +90,9 @@ class Esp32SerialNode(Node):
         self.cmd_vel_sub = self.create_subscription(Twist, self.cmd_vel_topic, self.cmd_vel_callback, 10)
         
         self.odom_pub = self.create_publisher(Odometry, self.odom_topic, 10)
-        self.odom_pub_timer = self.create_timer(self.odom_timer, self.publish_odom)
+        
+        # Timer for reading serial data
+        self.serial_timer = self.create_timer(0.01, self.read_serial_and_publish)  # 100Hz for serial reading
 
         self.tf_broadcaster = TransformBroadcaster(self)
 
@@ -128,6 +136,10 @@ class Esp32SerialNode(Node):
                 #                         Input RPM Left: {input_rpm_l}, Input RPM Right: {input_rpm_r}, Output RPM Left: {output_rpm_l}, \
                 #                         Output RPM Right: {output_rpm_r}")
                 
+                # Get current time for velocity calculation
+                current_time = self.get_clock().now()
+                dt = (current_time - self.prev_time).nanoseconds / 1e9
+                
                 # calculate delta change
                 d_left = (left - self.prev_left) / self.counts_per_rev * self.circumference
                 d_right = (right - self.prev_right) / self.counts_per_rev * self.circumference
@@ -138,9 +150,19 @@ class Esp32SerialNode(Node):
                 d_center = (d_left + d_right) / 2
                 d_theta = (d_right - d_left) / self.wheel_base
                 
+                # Update position
                 self.theta += d_theta
                 self.x += d_center * math.cos(self.theta)
                 self.y += d_center * math.sin(self.theta)
+                
+                # Calculate velocities
+                if dt > 0:
+                    self.vx = d_center / dt
+                    self.vy = 0.0  # Differential drive robot doesn't move sideways
+                    self.vtheta = d_theta / dt
+                
+                # Update time
+                self.prev_time = current_time
                 
                 # publish tf and odometry
                 self.publish_odom()
@@ -174,15 +196,45 @@ class Esp32SerialNode(Node):
         odom.header.frame_id = self.odom_frame_id
         odom.child_frame_id = self.base_frame_id
         
+        # Position
         odom.pose.pose.position.x = self.x
         odom.pose.pose.position.y = self.y
         odom.pose.pose.position.z = 0.0
 
-        # Convert to quaternion
+        # Orientation (convert to quaternion)
         odom.pose.pose.orientation.x = 0.0
         odom.pose.pose.orientation.y = 0.0
         odom.pose.pose.orientation.z = math.sin(self.theta / 2)
         odom.pose.pose.orientation.w = math.cos(self.theta / 2)
+        
+        # Velocity
+        odom.twist.twist.linear.x = self.vx
+        odom.twist.twist.linear.y = self.vy
+        odom.twist.twist.linear.z = 0.0
+        odom.twist.twist.angular.x = 0.0
+        odom.twist.twist.angular.y = 0.0
+        odom.twist.twist.angular.z = self.vtheta
+        
+        # Covariance matrices (you may want to tune these values)
+        # Position covariance (6x6 matrix in row-major order)
+        # odom.pose.covariance = [
+        #     0.01, 0.0,  0.0,  0.0,  0.0,  0.0,    # x
+        #     0.0,  0.01, 0.0,  0.0,  0.0,  0.0,    # y
+        #     0.0,  0.0,  0.0,  0.0,  0.0,  0.0,    # z
+        #     0.0,  0.0,  0.0,  0.0,  0.0,  0.0,    # roll
+        #     0.0,  0.0,  0.0,  0.0,  0.0,  0.0,    # pitch
+        #     0.0,  0.0,  0.0,  0.0,  0.0,  0.01    # yaw
+        # ]
+        
+        # # Velocity covariance (6x6 matrix in row-major order)
+        # odom.twist.covariance = [
+        #     0.01, 0.0,  0.0,  0.0,  0.0,  0.0,    # vx
+        #     0.0,  0.01, 0.0,  0.0,  0.0,  0.0,    # vy
+        #     0.0,  0.0,  0.0,  0.0,  0.0,  0.0,    # vz
+        #     0.0,  0.0,  0.0,  0.0,  0.0,  0.0,    # vroll
+        #     0.0,  0.0,  0.0,  0.0,  0.0,  0.0,    # vpitch
+        #     0.0,  0.0,  0.0,  0.0,  0.0,  0.01    # vyaw
+        # ]
         
         self.odom_pub.publish(odom)
 
