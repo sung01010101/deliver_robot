@@ -159,10 +159,9 @@ class Esp32SerialNode(Node):
                 input_rpm_r = float(parts[5])
                 output_rpm_l = float(parts[6])
                 output_rpm_r = float(parts[7])
-                # self.get_logger().info(f"Left: {left_encoder_count}, Right: {right_encoder_count}, PWM Left: {pwm_l}, PWM Right: {pwm_r},\
-                #                         Input RPM Left: {input_rpm_l}, Input RPM Right: {input_rpm_r}, Output RPM Left: {output_rpm_l}, \
-                #                         Output RPM Right: {output_rpm_r}")
-                
+                self.get_logger().info(f"Left: {left}, Right: {right}, PWM Left: {pwm_l}, PWM Right: {pwm_r},\
+                                        Input RPM: {input_rpm_l}, {input_rpm_r}, Output RPM: {output_rpm_l}, {output_rpm_r}")
+
                 # Get current time for velocity calculation
                 current_time = self.get_clock().now()
                 dt = (current_time - self.prev_time).nanoseconds / 1e9
