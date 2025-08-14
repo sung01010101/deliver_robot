@@ -4,6 +4,7 @@ import rclpy
 from rclpy.node import Node
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import Twist, TransformStamped
+from sensor_msgs.msg import Imu
 from tf2_ros import TransformBroadcaster
 import serial
 import math
@@ -26,7 +27,7 @@ class Esp32SerialNode(Node):
         self.declare_parameter('base_frame_id', 'base_footprint')
         self.declare_parameter('cmd_vel_topic', '/cmd_vel')
         self.declare_parameter('odom_topic', '/odom')
-        self.declare_parameter('use_ekf', False)
+        self.declare_parameter('rotation_arg', 'imu')
         
         # Get parameters
         self.counts_per_rev = self.get_parameter('encoder_cpr').get_parameter_value().double_value
@@ -41,7 +42,7 @@ class Esp32SerialNode(Node):
         self.base_frame_id = self.get_parameter('base_frame_id').get_parameter_value().string_value
         self.cmd_vel_topic = self.get_parameter('cmd_vel_topic').get_parameter_value().string_value
         self.odom_topic = self.get_parameter('odom_topic').get_parameter_value().string_value
-        self.use_ekf = self.get_parameter('use_ekf').get_parameter_value().bool_value
+        self.rotation_arg = self.get_parameter('rotation_arg').get_parameter_value().string_value
         
         # Calculate circumference
         self.circumference = 2 * math.pi * self.wheel_radius
@@ -54,7 +55,7 @@ class Esp32SerialNode(Node):
         self.get_logger().info(f"  Wheel Radius: {self.wheel_radius} m")
         self.get_logger().info(f"  Serial Port: {self.serial_port_name}")
         self.get_logger().info(f"  Serial Baudrate: {self.serial_baudrate}")
-        self.get_logger().info(f"  EKF imu: {self.use_ekf}")
+        self.get_logger().info(f"  Rotation Source: {self.rotation_arg}")
         
         # Initialize odometry data
         self.x = 0.0
@@ -68,6 +69,10 @@ class Esp32SerialNode(Node):
         self.vy = 0.0
         self.vtheta = 0.0
         self.prev_time = self.get_clock().now()
+        
+        # Initialize IMU data for rotation
+        self.imu_theta = 0.0
+        self.imu_available = False
         
         # Connect serial port
         try:
@@ -88,6 +93,10 @@ class Esp32SerialNode(Node):
         
         # Create publisher, subscriber and timer
         self.cmd_vel_sub = self.create_subscription(Twist, self.cmd_vel_topic, self.cmd_vel_callback, 10)
+        
+        # IMU subscription for rotation (when rotation_arg is 'imu' or 'both')
+        if self.rotation_arg in ['imu', 'both']:
+            self.imu_sub = self.create_subscription(Imu, '/imu/data_raw', self.imu_callback, 10)
         
         self.odom_pub = self.create_publisher(Odometry, self.odom_topic, 10)
         
@@ -116,6 +125,14 @@ class Esp32SerialNode(Node):
             self.get_logger().debug(f"Sent to ESP32: {command.strip()}")
         except Exception as e:
             self.get_logger().error(f"Failed to send command to ESP32: {str(e)}")
+    
+    def imu_callback(self, msg):
+        """Callback to receive IMU orientation data"""
+        # Extract yaw from quaternion
+        z = msg.orientation.z
+        w = msg.orientation.w
+        self.imu_theta = 2 * math.atan2(z, w)
+        self.imu_available = True
 
     def read_serial_and_publish(self):
         if self.serial_port.in_waiting > 0:
@@ -132,9 +149,9 @@ class Esp32SerialNode(Node):
                 input_rpm_r = float(parts[5])
                 output_rpm_l = float(parts[6])
                 output_rpm_r = float(parts[7])
-                # self.get_logger().info(f"Left: {left_encoder_count}, Right: {right_encoder_count}, PWM Left: {pwm_l}, PWM Right: {pwm_r},\
-                #                         Input RPM Left: {input_rpm_l}, Input RPM Right: {input_rpm_r}, Output RPM Left: {output_rpm_l}, \
-                #                         Output RPM Right: {output_rpm_r}")
+                self.get_logger().info(f"Left: {left}, Right: {right}, PWM Left: {pwm_l}, PWM Right: {pwm_r},\
+                                        Input RPM Left: {input_rpm_l}, Input RPM Right: {input_rpm_r}, Output RPM Left: {output_rpm_l}, \
+                                        Output RPM Right: {output_rpm_r}")
                 
                 # Get current time for velocity calculation
                 current_time = self.get_clock().now()
@@ -166,7 +183,11 @@ class Esp32SerialNode(Node):
                 
                 # publish tf and odometry
                 self.publish_odom()
-                if self.use_ekf == False:
+                # Publish TF based on rotation source
+                # - 'odom': Use odometry rotation for TF
+                # - 'imu': Use IMU rotation for TF (if available)
+                # - 'both': Don't publish TF (EKF handles it)
+                if self.rotation_arg in ['odom', 'imu']:
                     self.publish_tf()
                 
             except ValueError:
@@ -182,11 +203,19 @@ class Esp32SerialNode(Node):
         t.transform.translation.y = self.y
         t.transform.translation.z = 0.0
         
+        # Choose rotation source based on configuration
+        if self.rotation_arg == 'imu' and self.imu_available:
+            # Use IMU rotation
+            theta = self.imu_theta
+        else:
+            # Use odometry rotation (default for 'odom' mode or fallback)
+            theta = self.theta
+        
         # Convert to quaternion
         t.transform.rotation.x = 0.0
         t.transform.rotation.y = 0.0
-        t.transform.rotation.z = math.sin(self.theta / 2)
-        t.transform.rotation.w = math.cos(self.theta / 2)
+        t.transform.rotation.z = math.sin(theta / 2)
+        t.transform.rotation.w = math.cos(theta / 2)
         
         self.tf_broadcaster.sendTransform(t)
 

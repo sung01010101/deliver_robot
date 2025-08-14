@@ -140,9 +140,9 @@ class Esp32SerialNode(Node):
                 input_rpm_r = float(parts[5])
                 output_rpm_l = float(parts[6])
                 output_rpm_r = float(parts[7])
-                # self.get_logger().info(f"Left: {left_encoder_count}, Right: {right_encoder_count}, PWM Left: {pwm_l}, PWM Right: {pwm_r},\
-                #                         Input RPM Left: {input_rpm_l}, Input RPM Right: {input_rpm_r}, Output RPM Left: {output_rpm_l}, \
-                #                         Output RPM Right: {output_rpm_r}")
+                self.get_logger().info(f"Left: {left_encoder_count}, Right: {right_encoder_count}, PWM Left: {pwm_l}, PWM Right: {pwm_r},\
+                                        Input RPM Left: {input_rpm_l}, Input RPM Right: {input_rpm_r}, Output RPM Left: {output_rpm_l}, \
+                                        Output RPM Right: {output_rpm_r}")
                 
                 # distance change of left and right wheels
                 d_left = (left_encoder_count - self.prev_left_count) / self.counts_per_rev * self.circumference
