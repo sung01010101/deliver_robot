@@ -4,10 +4,10 @@ esp32_serial_node:
     motor_max_rpm: 330            # rpm of motor when fully operated
     wheel_base: 0.465             # (m) distance between wheels
     wheel_radius: 0.02            # (m) radius of wheels
-    encoder_cpr: 780.0            # count per revolution, (13 PPR * 30 gear ratio * 4 encoders tick per revolution / 2 for only checking phase A = 700)
+    encoder_cpr: 700.0            # count per revolution, (13 PPR * 30 gear ratio * 4 encoders tick per revolution / 2 for only checking phase A = 700)
 
     # Slip Ratio
-    base_slip_ratio: 0.057        # apply when moving in nearly straight line
+    base_slip_ratio: 0.0        # apply when moving in nearly straight line
     param_n: 0.5                  # parameter to compensate speed difference between wheels
 
     # Serial Communication
