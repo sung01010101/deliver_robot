@@ -6,6 +6,7 @@ from nav_msgs.msg import Odometry
 from geometry_msgs.msg import Twist, TransformStamped
 from sensor_msgs.msg import Imu
 from tf2_ros import TransformBroadcaster
+from tf_transformations import euler_from_quaternion
 import serial
 import math
 
@@ -68,8 +69,8 @@ class Esp32SerialNode(Node):
         self.prev_right = 0
         
         # Initialize IMU data
-        self.imu_quat_z = 0.0
-        self.imu_quat_w = 1.0
+        self.imu_z = 0.0
+        self.imu_w = 1.0
         self.imu_available = False
         
         # Initialize velocity data
@@ -134,9 +135,12 @@ class Esp32SerialNode(Node):
     def imu_callback(self, msg):
         """Callback to receive IMU orientation data"""
         # Store quaternion components directly
-        self.imu_quat_z = msg.orientation.z
-        self.imu_quat_w = msg.orientation.w
-        
+        x = msg.orientation.x
+        y = msg.orientation.y
+        self.imu_z = msg.orientation.z
+        self.imu_w = msg.orientation.w
+        _, _, self.imu_theta = euler_from_quaternion([x, y, self.imu_z, self.imu_w])
+
         if not self.imu_available:
             self.get_logger().info("IMU data is now available for odometry calculation")
         self.imu_available = True
@@ -170,41 +174,16 @@ class Esp32SerialNode(Node):
                 
                 # calculate odometry values
                 d_center = (d_left + d_right) / 2
-                d_theta = (d_right - d_left) / self.wheel_base
-                
-                # Update position and rotation
-                if self.use_imu and self.imu_available:
-                    # Use IMU for rotation, but still calculate encoder-based angular velocity for velocity estimation
-                    encoder_d_theta = d_theta
-                    # Convert IMU quaternion to theta for position calculation
-                    imu_theta = 2 * math.atan2(self.imu_quat_z, self.imu_quat_w)
-                    self.theta = imu_theta
-                    
-                    # For velocity calculation, use encoder-based angular velocity
-                    if dt > 0:
-                        self.vtheta = encoder_d_theta / dt
-                else:
-                    # Use encoder-based rotation (original behavior)
-                    self.theta += d_theta
-                    if dt > 0:
-                        self.vtheta = d_theta / dt
-                
+                self.theta = self.imu_theta
+
+                # d_theta = (d_right - d_left) / self.wheel_base
+                # self.theta += d_theta
+
                 # Update linear position (always uses encoder data)
                 self.x += d_center * math.cos(self.theta)
                 self.y += d_center * math.sin(self.theta)
                 
-                # Calculate linear velocities
-                if dt > 0:
-                    self.vx = d_center / dt
-                    self.vy = 0.0  # Differential drive robot doesn't move sideways
-                
-                # Update time
-                self.prev_time = current_time
-                
-                # publish tf and odometry
                 self.publish_odom()
-                
-                # Always publish TF transform (use IMU data when available and use_imu=True)
                 self.publish_tf()
                 
             except ValueError:
@@ -220,18 +199,10 @@ class Esp32SerialNode(Node):
         t.transform.translation.y = self.y
         t.transform.translation.z = 0.0
         
-        # Use IMU quaternion directly if available and use_imu is true
-        if self.use_imu and self.imu_available:
-            t.transform.rotation.x = 0.0
-            t.transform.rotation.y = 0.0
-            t.transform.rotation.z = self.imu_quat_z
-            t.transform.rotation.w = self.imu_quat_w
-        else:
-            # Convert encoder-based theta to quaternion
-            t.transform.rotation.x = 0.0
-            t.transform.rotation.y = 0.0
-            t.transform.rotation.z = math.sin(self.theta / 2)
-            t.transform.rotation.w = math.cos(self.theta / 2)
+        t.transform.rotation.x = 0.0
+        t.transform.rotation.y = 0.0
+        t.transform.rotation.z = self.imu_z
+        t.transform.rotation.w = self.imu_w
         
         self.tf_broadcaster.sendTransform(t)
 
@@ -241,52 +212,14 @@ class Esp32SerialNode(Node):
         odom.header.frame_id = self.odom_frame_id
         odom.child_frame_id = self.base_frame_id
         
-        # Position
         odom.pose.pose.position.x = self.x
         odom.pose.pose.position.y = self.y
         odom.pose.pose.position.z = 0.0
 
-        # Orientation - use IMU quaternion directly if available and use_imu is true
-        if self.use_imu and self.imu_available:
-            odom.pose.pose.orientation.x = 0.0
-            odom.pose.pose.orientation.y = 0.0
-            odom.pose.pose.orientation.z = self.imu_quat_z
-            odom.pose.pose.orientation.w = self.imu_quat_w
-        else:
-            # Convert encoder-based theta to quaternion
-            odom.pose.pose.orientation.x = 0.0
-            odom.pose.pose.orientation.y = 0.0
-            odom.pose.pose.orientation.z = math.sin(self.theta / 2)
-            odom.pose.pose.orientation.w = math.cos(self.theta / 2)
-        
-        # Velocity
-        odom.twist.twist.linear.x = self.vx
-        odom.twist.twist.linear.y = self.vy
-        odom.twist.twist.linear.z = 0.0
-        odom.twist.twist.angular.x = 0.0
-        odom.twist.twist.angular.y = 0.0
-        odom.twist.twist.angular.z = self.vtheta
-        
-        # Covariance matrices (you may want to tune these values)
-        # Position covariance (6x6 matrix in row-major order)
-        # odom.pose.covariance = [
-        #     0.01, 0.0,  0.0,  0.0,  0.0,  0.0,    # x
-        #     0.0,  0.01, 0.0,  0.0,  0.0,  0.0,    # y
-        #     0.0,  0.0,  0.0,  0.0,  0.0,  0.0,    # z
-        #     0.0,  0.0,  0.0,  0.0,  0.0,  0.0,    # roll
-        #     0.0,  0.0,  0.0,  0.0,  0.0,  0.0,    # pitch
-        #     0.0,  0.0,  0.0,  0.0,  0.0,  0.01    # yaw
-        # ]
-        
-        # # Velocity covariance (6x6 matrix in row-major order)
-        # odom.twist.covariance = [
-        #     0.01, 0.0,  0.0,  0.0,  0.0,  0.0,    # vx
-        #     0.0,  0.01, 0.0,  0.0,  0.0,  0.0,    # vy
-        #     0.0,  0.0,  0.0,  0.0,  0.0,  0.0,    # vz
-        #     0.0,  0.0,  0.0,  0.0,  0.0,  0.0,    # vroll
-        #     0.0,  0.0,  0.0,  0.0,  0.0,  0.0,    # vpitch
-        #     0.0,  0.0,  0.0,  0.0,  0.0,  0.01    # vyaw
-        # ]
+        odom.pose.pose.orientation.x = 0.0
+        odom.pose.pose.orientation.y = 0.0
+        odom.pose.pose.orientation.z = self.imu_z
+        odom.pose.pose.orientation.w = self.imu_w
         
         self.odom_pub.publish(odom)
 
