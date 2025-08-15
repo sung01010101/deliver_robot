@@ -171,7 +171,23 @@ class Esp32SerialNode(Node):
                 # calculate odometry values
                 d_center = (d_left + d_right) / 2
                 d_theta = (d_right - d_left) / self.wheel_base
-                self.theta += d_theta
+                
+                # Update position and rotation
+                if self.use_imu and self.imu_available:
+                    # Use IMU for rotation, but still calculate encoder-based angular velocity for velocity estimation
+                    encoder_d_theta = d_theta
+                    # Convert IMU quaternion to theta for position calculation
+                    imu_theta = 2 * math.atan2(self.imu_quat_z, self.imu_quat_w)
+                    self.theta = imu_theta
+                    
+                    # For velocity calculation, use encoder-based angular velocity
+                    if dt > 0:
+                        self.vtheta = encoder_d_theta / dt
+                else:
+                    # Use encoder-based rotation (original behavior)
+                    self.theta += d_theta
+                    if dt > 0:
+                        self.vtheta = d_theta / dt
                 
                 # Update linear position (always uses encoder data)
                 self.x += d_center * math.cos(self.theta)
@@ -242,6 +258,35 @@ class Esp32SerialNode(Node):
             odom.pose.pose.orientation.y = 0.0
             odom.pose.pose.orientation.z = math.sin(self.theta / 2)
             odom.pose.pose.orientation.w = math.cos(self.theta / 2)
+        
+        # Velocity
+        odom.twist.twist.linear.x = self.vx
+        odom.twist.twist.linear.y = self.vy
+        odom.twist.twist.linear.z = 0.0
+        odom.twist.twist.angular.x = 0.0
+        odom.twist.twist.angular.y = 0.0
+        odom.twist.twist.angular.z = self.vtheta
+        
+        # Covariance matrices (you may want to tune these values)
+        # Position covariance (6x6 matrix in row-major order)
+        # odom.pose.covariance = [
+        #     0.01, 0.0,  0.0,  0.0,  0.0,  0.0,    # x
+        #     0.0,  0.01, 0.0,  0.0,  0.0,  0.0,    # y
+        #     0.0,  0.0,  0.0,  0.0,  0.0,  0.0,    # z
+        #     0.0,  0.0,  0.0,  0.0,  0.0,  0.0,    # roll
+        #     0.0,  0.0,  0.0,  0.0,  0.0,  0.0,    # pitch
+        #     0.0,  0.0,  0.0,  0.0,  0.0,  0.01    # yaw
+        # ]
+        
+        # # Velocity covariance (6x6 matrix in row-major order)
+        # odom.twist.covariance = [
+        #     0.01, 0.0,  0.0,  0.0,  0.0,  0.0,    # vx
+        #     0.0,  0.01, 0.0,  0.0,  0.0,  0.0,    # vy
+        #     0.0,  0.0,  0.0,  0.0,  0.0,  0.0,    # vz
+        #     0.0,  0.0,  0.0,  0.0,  0.0,  0.0,    # vroll
+        #     0.0,  0.0,  0.0,  0.0,  0.0,  0.0,    # vpitch
+        #     0.0,  0.0,  0.0,  0.0,  0.0,  0.01    # vyaw
+        # ]
         
         self.odom_pub.publish(odom)
 
