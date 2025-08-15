@@ -5,6 +5,7 @@ from rclpy.node import Node
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import Twist, TransformStamped
 from sensor_msgs.msg import Imu
+from std_msgs.msg import Float32MultiArray
 from tf2_ros import TransformBroadcaster
 from tf_transformations import euler_from_quaternion
 import serial
@@ -102,6 +103,9 @@ class Esp32SerialNode(Node):
         
         self.odom_pub = self.create_publisher(Odometry, self.odom_topic, 10)
         
+        # Publisher for RPM data
+        self.rpm_pub = self.create_publisher(Float32MultiArray, '/rpm_data', 10)
+        
         # Timer for reading serial data
         self.serial_timer = self.create_timer(self.serial_timer, self.read_serial_and_publish)
 
@@ -157,6 +161,11 @@ class Esp32SerialNode(Node):
                 output_rpm_l = float(parts[6])
                 output_rpm_r = float(parts[7])
                 self.get_logger().info(f"Encoder: {left}, {right}, PWM: {pwm_l}, {pwm_r}, Input RPM: {input_rpm_l}, {input_rpm_r}, Output RPM: {output_rpm_l}, {output_rpm_r}")
+                
+                # Publish RPM data for plotting
+                rpm_msg = Float32MultiArray()
+                rpm_msg.data = [input_rpm_l, input_rpm_r, output_rpm_l, output_rpm_r]
+                self.rpm_pub.publish(rpm_msg)
                 
                 # calculate delta change
                 d_left = (left - self.prev_left) / self.counts_per_rev * self.circumference
