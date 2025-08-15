@@ -23,7 +23,7 @@ class Esp32SerialNode(Node):
         self.declare_parameter('serial_port', '/dev/esp32')
         self.declare_parameter('serial_baudrate', 115200)
         self.declare_parameter('serial_timeout', 1.0)
-        self.declare_parameter('odom_timer', 0.01)
+        self.declare_parameter('odom_timer', 0.05)
         self.declare_parameter('odom_frame_id', 'odom')
         self.declare_parameter('base_frame_id', 'base_footprint')
         self.declare_parameter('cmd_vel_topic', '/cmd_vel')
@@ -107,7 +107,7 @@ class Esp32SerialNode(Node):
         self.odom_pub = self.create_publisher(Odometry, self.odom_topic, 10)
         
         # Timer for reading serial data
-        self.serial_timer = self.create_timer(0.01, self.read_serial_and_publish)  # 100Hz for serial reading
+        self.serial_timer = self.create_timer(self.odom_timer, self.read_serial_and_publish)
 
         self.tf_broadcaster = TransformBroadcaster(self)
 
@@ -198,7 +198,7 @@ class Esp32SerialNode(Node):
         t.transform.translation.x = self.x
         t.transform.translation.y = self.y
         t.transform.translation.z = 0.0
-        
+
         t.transform.rotation.x = 0.0
         t.transform.rotation.y = 0.0
         t.transform.rotation.z = self.imu_z
