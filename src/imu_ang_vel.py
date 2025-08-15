@@ -34,24 +34,31 @@ class IMUYawNode(Node):
             self.prev_time = current_time
             self.first_message = False
             self.get_logger().info(f'First IMU message received, starting integration')
+            self.get_logger().info(f'Initial angular velocity: {ang_vel_z:.6f} rad/s')
             return
         
         # Calculate time delta
         dt = (current_time - self.prev_time).nanoseconds / 1e9
         
+        # Log raw values for debugging
+        self.get_logger().info(f'Raw angular velocity Z: {ang_vel_z:.6f} rad/s, dt: {dt:.6f}s')
+        
         # Integrate angular velocity to get yaw angle
-        if dt > 0:
-            self.current_yaw += ang_vel_z * dt
+        if dt > 0 and abs(ang_vel_z) > 1e-6:  # Only integrate if there's meaningful angular velocity
+            delta_yaw = ang_vel_z * dt
+            self.current_yaw += delta_yaw
             
             # Normalize angle to [-pi, pi]
             self.current_yaw = math.atan2(math.sin(self.current_yaw), math.cos(self.current_yaw))
+            
+            self.get_logger().info(f'Delta yaw: {delta_yaw:.6f} rad, Total yaw: {self.current_yaw:.6f} rad')
         
         # Update previous time
         self.prev_time = current_time
         
         # Log information
-        self.get_logger().info(f'Angular Velocity Z: {ang_vel_z:.3f} rad/s, '
-                              f'Integrated Yaw: {self.current_yaw:.3f} rad ({math.degrees(self.current_yaw):.1f} deg)')
+        self.get_logger().info(f'Angular Velocity Z: {ang_vel_z:.6f} rad/s, '
+                              f'Integrated Yaw: {self.current_yaw:.6f} rad ({math.degrees(self.current_yaw):.2f} deg)')
         
         # Publish TF transform
         self.publish_tf()
@@ -79,9 +86,9 @@ class IMUYawNode(Node):
         # Broadcast the transform
         self.tf_broadcaster.sendTransform(t)
         
-        self.get_logger().debug(f'Published TF: yaw={self.current_yaw:.3f} rad, '
-                               f'quat(z={math.sin(self.current_yaw / 2):.3f}, '
-                               f'w={math.cos(self.current_yaw / 2):.3f})')
+        self.get_logger().info(f'Published TF: yaw={self.current_yaw:.6f} rad ({math.degrees(self.current_yaw):.2f} deg), '
+                              f'quat(z={math.sin(self.current_yaw / 2):.6f}, '
+                              f'w={math.cos(self.current_yaw / 2):.6f})')
 
 def main(args=None):
     rclpy.init(args=args)
