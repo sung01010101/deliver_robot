@@ -172,23 +172,7 @@ class Esp32SerialNode(Node):
                 # calculate odometry values
                 d_center = (d_left + d_right) / 2
                 d_theta = (d_right - d_left) / self.wheel_base
-                
-                # Update position and rotation
-                if self.use_imu and self.imu_available:
-                    # Use IMU for rotation, but still calculate encoder-based angular velocity for velocity estimation
-                    encoder_d_theta = d_theta
-                    # Convert IMU quaternion to theta for position calculation
-                    imu_theta = 2 * math.atan2(self.imu_quat_z, self.imu_quat_w)
-                    self.theta = imu_theta
-                    
-                    # For velocity calculation, use encoder-based angular velocity
-                    if dt > 0:
-                        self.vtheta = encoder_d_theta / dt
-                else:
-                    # Use encoder-based rotation (original behavior)
-                    self.theta += d_theta
-                    if dt > 0:
-                        self.vtheta = d_theta / dt
+                self.theta += d_theta
                 
                 # Update linear position (always uses encoder data)
                 self.x += d_center * math.cos(self.theta)
