@@ -7,7 +7,7 @@ esp32_serial_node:
     encoder_cpr: 780.0            # count per revolution, (13 PPR * 30 gear ratio * 4 encoders tick per revolution / 2 for only checking phase A = 700)
 
     # Slip Ratio
-    base_slip_ratio: 0.1          # apply when moving in nearly straight line
+    base_slip_ratio: 0.057        # apply when moving in nearly straight line
     param_n: 0.5                  # parameter to compensate speed difference between wheels
 
     # Serial Communication

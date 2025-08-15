@@ -19,7 +19,8 @@ class Esp32SerialNode(Node):
         self.declare_parameter('encoder_cpr', 700.0)
         self.declare_parameter('motor_max_rpm', 330)
         self.declare_parameter('wheel_base', 0.465)
-        self.declare_parameter('wheel_radius', 0.019)
+        self.declare_parameter('wheel_radius', 0.02)
+        self.declare_parameter('base_slip_ratio', 0.0)
         self.declare_parameter('serial_port', '/dev/esp32')
         self.declare_parameter('serial_baudrate', 115200)
         self.declare_parameter('serial_timeout', 1.0)
@@ -36,6 +37,7 @@ class Esp32SerialNode(Node):
         self.motor_max_rpm = self.get_parameter('motor_max_rpm').get_parameter_value().integer_value
         self.wheel_base = self.get_parameter('wheel_base').get_parameter_value().double_value
         self.wheel_radius = self.get_parameter('wheel_radius').get_parameter_value().double_value
+        self.base_slip_ratio = self.get_parameter('base_slip_ratio').get_parameter_value().double_value
         self.serial_port_name = self.get_parameter('serial_port').get_parameter_value().string_value
         self.serial_baudrate = self.get_parameter('serial_baudrate').get_parameter_value().integer_value
         self.serial_timeout = self.get_parameter('serial_timeout').get_parameter_value().double_value
@@ -72,12 +74,6 @@ class Esp32SerialNode(Node):
         self.imu_z = 0.0
         self.imu_w = 1.0
         self.imu_available = False
-        
-        # Initialize velocity data
-        self.vx = 0.0
-        self.vy = 0.0
-        self.vtheta = 0.0
-        self.prev_time = self.get_clock().now()
         
         # Connect serial port
         try:
@@ -161,14 +157,14 @@ class Esp32SerialNode(Node):
                 output_rpm_l = float(parts[6])
                 output_rpm_r = float(parts[7])
                 self.get_logger().info(f"Encoder: {left}, {right}, PWM: {pwm_l}, {pwm_r}, Input RPM: {input_rpm_l}, {input_rpm_r}, Output RPM: {output_rpm_l}, {output_rpm_r}")
-
-                # Get current time for velocity calculation
-                current_time = self.get_clock().now()
-                dt = (current_time - self.prev_time).nanoseconds / 1e9
                 
                 # calculate delta change
                 d_left = (left - self.prev_left) / self.counts_per_rev * self.circumference
                 d_right = (right - self.prev_right) / self.counts_per_rev * self.circumference
+
+                # apply fixed slip ratio (not precise estimation)
+                d_left *= (1 - self.base_slip_ratio)
+                d_right *= (1 - self.base_slip_ratio)
 
                 self.prev_left, self.prev_right = left, right
                 
