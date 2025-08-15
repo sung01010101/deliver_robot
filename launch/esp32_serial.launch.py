@@ -13,7 +13,7 @@ def generate_launch_description():
     
     # directories
     package_dir = get_package_share_directory('deliver_robot')
-    ekf_config_file = os.path.join(package_dir, 'config', 'ekf.yaml')
+    # ekf_config_file = os.path.join(package_dir, 'config', 'ekf.yaml')
     esp32_config_file = os.path.join(package_dir, 'config', 'esp32_serial_config.yaml')
 
     # launch arguments
@@ -30,17 +30,17 @@ def generate_launch_description():
     )
 
     # launch nodes
-    robot_localization_node = Node(
-        package='robot_localization',
-        executable='ekf_node',
-        name='ekf_node',
-        output='screen',
-        parameters=[
-            ekf_config_file,
-            {'use_sim_time': LaunchConfiguration('use_sim_time')}
-        ],
-        condition=IfCondition(LaunchConfiguration('use_imu'))
-    )
+    # robot_localization_node = Node(
+    #     package='robot_localization',
+    #     executable='ekf_node',
+    #     name='ekf_node',
+    #     output='screen',
+    #     parameters=[
+    #         ekf_config_file,
+    #         {'use_sim_time': LaunchConfiguration('use_sim_time')}
+    #     ],
+    #     condition=IfCondition(LaunchConfiguration('use_imu'))
+    # )
 
     esp32_serial_node = Node(
         package='deliver_robot',
@@ -59,6 +59,6 @@ def generate_launch_description():
     return LaunchDescription([
         declare_use_imu_arg,
         declare_use_sim_time_arg,
-        robot_localization_node,
+        # robot_localization_node,
         esp32_serial_node
     ])
