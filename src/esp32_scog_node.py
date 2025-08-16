@@ -161,8 +161,10 @@ class Esp32ScogNode(Node):
                 input_rpm_r = float(parts[5])
                 output_rpm_l = float(parts[6])
                 output_rpm_r = float(parts[7])
-                # self.get_logger().info(f"Encoder: {left}, {right}, PWM: {pwm_l}, {pwm_r}, Input RPM: {input_rpm_l}, {input_rpm_r}, Output RPM: {output_rpm_l}, {output_rpm_r}")
-                
+                self.get_logger().info(f"Encoder: {left}, {right}, PWM: {pwm_l}, {pwm_r}, "
+                                       f"Input RPM: {input_rpm_l}, {input_rpm_r}, "
+                                       f"Output RPM: {output_rpm_l}, {output_rpm_r}")
+
                 rpm_msg = Float32MultiArray()
                 rpm_msg.data = [pwm_l, pwm_r, input_rpm_l, input_rpm_r, output_rpm_l, output_rpm_r]
                 self.rpm_pub.publish(rpm_msg)
@@ -174,7 +176,10 @@ class Esp32ScogNode(Node):
                 d_imu_theta = self.imu_theta - self.prev_imu_theta
 
                 # formula 7: 計算 slip ratios 的比值
-                slip_ratio_ratio = self.signum(d_left * d_right) * (abs(d_right / d_left) ** self.param_n)
+                if d_left == 0 or d_right == 0:
+                    slip_ratio_ratio = 0.0
+                else:
+                    slip_ratio_ratio = self.signum(d_left * d_right) * (abs(d_right / d_left) ** self.param_n)
                 
                 # formula 3 + 7 合併後的公式, 解右輪 slip ratio
                 denominator = (slip_ratio_ratio * d_left - d_right)
