@@ -7,7 +7,7 @@ esp32_serial_node:
     encoder_cpr: 700.0            # count per revolution, (13 PPR * 30 gear ratio * 4 encoders tick per revolution / 2 for only checking phase A = 700)
 
     # Slip Ratio
-    base_slip_ratio: 0.0        # apply when moving in nearly straight line
+    base_slip_ratio: 0.057        # apply when moving in nearly straight line
     param_n: 0.5                  # parameter to compensate speed difference between wheels
 
     # Serial Communication
@@ -18,11 +18,11 @@ esp32_serial_node:
     # Timer Settings
     serial_timer: 0.1            # refresh rate for serial communication with ESP32
                                   
-    # Frame IDs (tf topic, use only if ekf_imu is set to false)
+    # Frame IDs
     odom_frame_id: "odom"
     base_frame_id: "base_footprint"
     
     # Topic Names
     cmd_vel_topic: "/cmd_vel"
     odom_topic: "/odom"
-    imu_topic: "/imu/data_raw"     # topic for IMU data, used for scog node only, not esp32_serial_node
+    imu_topic: "/imu/data_raw"

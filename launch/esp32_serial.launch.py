@@ -25,7 +25,7 @@ def generate_launch_description():
 
     declare_use_imu_arg = DeclareLaunchArgument(
         'use_imu',
-        default_value='False',
+        default_value='True',
         description='Use EKF if True',
     )
 

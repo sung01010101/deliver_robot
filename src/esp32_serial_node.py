@@ -74,6 +74,7 @@ class Esp32SerialNode(Node):
         # Initialize IMU data
         self.imu_z = 0.0
         self.imu_w = 1.0
+        self.imu_theta = 0.0
         self.imu_available = False
         
         # Connect serial port
