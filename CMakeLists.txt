@@ -22,7 +22,6 @@ install(PROGRAMS
   src/get_amcl_pose.py
   src/imu_ang_vel.py
   src/imu_orientation.py
-  src/rpm_plotter.py
   DESTINATION lib/${PROJECT_NAME}
 )
 
