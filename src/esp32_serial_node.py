@@ -61,6 +61,8 @@ class Esp32SerialNode(Node):
         self.get_logger().info(f"  Wheel Radius: {self.wheel_radius} m")
         self.get_logger().info(f"  Serial Port: {self.serial_port_name}")
         self.get_logger().info(f"  Serial Baudrate: {self.serial_baudrate}")
+        self.get_logger().info(f"  ----------------------------------------------------")
+        self.get_logger().info(f"  Base Slip Ratio: {self.base_slip_ratio}")
         self.get_logger().info(f"  IMU Topic: {self.imu_topic}")
         self.get_logger().info(f"  Use Imu for Rotation: {self.use_imu}")
         
@@ -75,7 +77,6 @@ class Esp32SerialNode(Node):
         self.imu_z = 0.0
         self.imu_w = 1.0
         self.imu_theta = 0.0
-        self.imu_available = False
         
         # Connect serial port
         try:
@@ -102,14 +103,16 @@ class Esp32SerialNode(Node):
             self.imu_sub = self.create_subscription(Imu, self.imu_topic, self.imu_callback, 10)
             self.get_logger().info(f"IMU subscriber created on topic: {self.imu_topic}")
         
-        self.odom_pub = self.create_publisher(Odometry, self.odom_topic, 10)
-        
         # Publisher for RPM data
         self.rpm_pub = self.create_publisher(Float32MultiArray, '/rpm_data', 10)
         
         # Timer for reading serial data
         self.serial_timer = self.create_timer(self.serial_timer, self.read_serial_and_publish)
 
+        # Publisher for odometry
+        self.odom_pub = self.create_publisher(Odometry, self.odom_topic, 10)
+
+        # Publisher for tf transforms
         self.tf_broadcaster = TransformBroadcaster(self)
 
     def cmd_vel_callback(self, msg):
@@ -142,10 +145,6 @@ class Esp32SerialNode(Node):
         self.imu_w = msg.orientation.w
         _, _, self.imu_theta = euler_from_quaternion([x, y, self.imu_z, self.imu_w])
 
-        if not self.imu_available:
-            self.get_logger().info("IMU data is now available for odometry calculation")
-        self.imu_available = True
-
     def read_serial_and_publish(self):
         if self.serial_port.in_waiting > 0:
             line = self.serial_port.readline().decode('utf-8').strip()
@@ -167,30 +166,31 @@ class Esp32SerialNode(Node):
                 rpm_msg.data = [pwm_l, pwm_r, input_rpm_l, input_rpm_r, output_rpm_l, output_rpm_r]
                 self.rpm_pub.publish(rpm_msg)
                 
-                # calculate delta change
+                # delta change of encoders
                 d_left = (left - self.prev_left) / self.counts_per_rev * self.circumference
                 d_right = (right - self.prev_right) / self.counts_per_rev * self.circumference
 
                 # apply fixed slip ratio (not precise estimation)
                 d_left *= (1 - self.base_slip_ratio)
                 d_right *= (1 - self.base_slip_ratio)
-
-                self.prev_left, self.prev_right = left, right
                 
-                # calculate odometry values
-                d_center = (d_left + d_right) / 2
+                # update odometry
+                d_center = (d_left + d_right) / 2.0
+                
                 self.theta = self.imu_theta
-
-                # d_theta = (d_right - d_left) / self.wheel_base
-                # self.theta += d_theta
-
-                # Update linear position (always uses encoder data)
                 self.x += d_center * math.cos(self.theta)
                 self.y += d_center * math.sin(self.theta)
                 
+                # d_theta = (d_right - d_left) / self.wheel_base
+                # self.theta += d_theta
+
                 self.publish_odom()
                 self.publish_tf()
                 
+                # update previous values
+                self.prev_left = left
+                self.prev_right = right
+
             except ValueError:
                 self.get_logger().warn(f"Receiving Invalid data: {line}")
 

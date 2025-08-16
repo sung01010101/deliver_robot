@@ -20,6 +20,7 @@ install(PROGRAMS
   src/esp32_serial_node.py
   src/get_param_n.py
   src/get_amcl_pose.py
+  src/get_scog.py
   src/imu_ang_vel.py
   src/imu_orientation.py
   DESTINATION lib/${PROJECT_NAME}
