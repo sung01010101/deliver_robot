@@ -161,7 +161,7 @@ class Esp32ScogNode(Node):
                 input_rpm_r = float(parts[5])
                 output_rpm_l = float(parts[6])
                 output_rpm_r = float(parts[7])
-                self.get_logger().info(f"Encoder: {left}, {right}, PWM: {pwm_l}, {pwm_r}, Input RPM: {input_rpm_l}, {input_rpm_r}, Output RPM: {output_rpm_l}, {output_rpm_r}")
+                # self.get_logger().info(f"Encoder: {left}, {right}, PWM: {pwm_l}, {pwm_r}, Input RPM: {input_rpm_l}, {input_rpm_r}, Output RPM: {output_rpm_l}, {output_rpm_r}")
                 
                 rpm_msg = Float32MultiArray()
                 rpm_msg.data = [pwm_l, pwm_r, input_rpm_l, input_rpm_r, output_rpm_l, output_rpm_r]
@@ -205,7 +205,9 @@ class Esp32ScogNode(Node):
                 self.y += d_center * math.sin(self.theta)
                
                 # debugging outputs
-                self.get_logger().info(f"Slip Ratio L: {slip_l}, R: {slip_r}, Vel L: {d_left}, R: {d_right}")
+                self.get_logger().info(f"d_left: {d_left:.4f}, {d_right:.4f}, "
+                                       f"d_theta: {d_odom_theta:.4f}, {d_imu_theta:.4f}, "
+                                       f"slip: {slip_l:.4f}, {slip_r:.4f}")
                 
                 scog_msg = Float32MultiArray()
                 scog_msg.data = [d_left, d_right, d_odom_theta, d_imu_theta,
