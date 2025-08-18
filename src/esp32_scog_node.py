@@ -76,7 +76,7 @@ class Esp32ScogNode(Node):
         # Initialize IMU data
         self.imu_z = 0.0
         self.imu_w = 1.0
-        self.imu_theta = 0.0
+        self.prev_theta = 0.0
         self.accumulated_imu_theta = 0.0
 
         # Connect serial port
@@ -139,19 +139,16 @@ class Esp32ScogNode(Node):
 
     def imu_callback(self, msg):
         """Callback to receive IMU orientation data"""
-        # Store quaternion components directly
         x = msg.orientation.x
         y = msg.orientation.y
         self.imu_z = msg.orientation.z
         self.imu_w = msg.orientation.w
         
-        # Store previous theta before updating
-        prev_theta = self.imu_theta
-        _, _, self.imu_theta = euler_from_quaternion([x, y, self.imu_z, self.imu_w])
-        
         # Accumulate theta change for synchronization with encoder data
-        d_theta = self.imu_theta - prev_theta
+        _, _, current_theta = euler_from_quaternion([x, y, self.imu_z, self.imu_w])
+        d_theta = current_theta - self.prev_theta
         self.accumulated_imu_theta += d_theta
+        self.prev_theta = current_theta
 
     def read_serial_and_publish(self):
         if self.serial_port.in_waiting > 0:
