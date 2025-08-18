@@ -9,21 +9,21 @@ import os
 
 def generate_launch_description():
     # Declare launch arguments
-    scog_topic_arg = DeclareLaunchArgument(
-        'scog_topic',
-        default_value='/scog_data',
-        description='Topic name for SCOG data'
+    rpm_topic_arg = DeclareLaunchArgument(
+        'rpm_topic',
+        default_value='/rpm_data',
+        description='Topic name for RPM data'
     )
     
     output_file_arg = DeclareLaunchArgument(
         'output_file',
-        default_value='scog_data.csv',
+        default_value='rpm_data.csv',
         description='Output CSV filename'
     )
     
     output_directory_arg = DeclareLaunchArgument(
         'output_directory',
-        default_value='~/csv/scog',
+        default_value='~/csv/rpm',
         description='Output directory for CSV file'
     )
     
@@ -33,14 +33,14 @@ def generate_launch_description():
         description='Add timestamp to filename'
     )
 
-    # Create the get_scog node
-    get_scog_node = Node(
+    # Create the get_rpm node
+    get_rpm_node = Node(
         package='deliver_robot',
-        executable='get_scog.py',
-        name='get_scog_node',
+        executable='get_rpm.py',
+        name='get_rpm_node',
         output='screen',
         parameters=[{
-            'scog_topic': LaunchConfiguration('scog_topic'),
+            'rpm_topic': LaunchConfiguration('rpm_topic'),
             'output_file': LaunchConfiguration('output_file'),
             'output_directory': LaunchConfiguration('output_directory'),
             'add_timestamp': LaunchConfiguration('add_timestamp'),
@@ -48,9 +48,9 @@ def generate_launch_description():
     )
 
     return LaunchDescription([
-        scog_topic_arg,
+        rpm_topic_arg,
         output_file_arg,
         output_directory_arg,
         add_timestamp_arg,
-        get_scog_node
+        get_rpm_node
     ])

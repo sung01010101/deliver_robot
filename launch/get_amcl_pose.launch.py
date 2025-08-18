@@ -14,7 +14,7 @@ def generate_launch_description():
     # Declare launch arguments (Default save to home directory)
     declare_output_dir_cmd = DeclareLaunchArgument(
         'output_dir',
-        default_value=os.path.expanduser('~/'),
+        default_value=os.path.expanduser('~/csv/amcl_pose'),
         description='Directory to save the pose log CSV file'
     )
     
