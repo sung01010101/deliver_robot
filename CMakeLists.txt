@@ -18,8 +18,9 @@ install(PROGRAMS
   src/demo_cmd_vel.py
   src/esp32_scog_node.py  
   src/esp32_serial_node.py
-  src/get_param_n.py
   src/get_amcl_pose.py
+  src/get_param_n.py
+  src/get_rpm.py
   src/get_scog.py
   src/imu_ang_vel.py
   src/imu_orientation.py
