@@ -26,7 +26,7 @@ class Esp32ScogNode(Node):
         self.declare_parameter('serial_port', '/dev/esp32')
         self.declare_parameter('serial_baudrate', 115200)
         self.declare_parameter('serial_timeout', 1.0)
-        self.declare_parameter('serial_timer', 0.01)
+        self.declare_parameter('serial_timer', 0.1)
         self.declare_parameter('odom_frame_id', 'odom')
         self.declare_parameter('base_frame_id', 'base_footprint')
         self.declare_parameter('cmd_vel_topic', '/cmd_vel')
@@ -78,6 +78,7 @@ class Esp32ScogNode(Node):
         self.imu_w = 1.0
         self.imu_theta = 0.0
         self.prev_imu_theta = 0.0
+        self.accumulated_imu_theta = 0.0
 
         # Connect serial port
         try:
@@ -144,7 +145,14 @@ class Esp32ScogNode(Node):
         y = msg.orientation.y
         self.imu_z = msg.orientation.z
         self.imu_w = msg.orientation.w
+        
+        # Store previous theta before updating
+        prev_theta = self.imu_theta
         _, _, self.imu_theta = euler_from_quaternion([x, y, self.imu_z, self.imu_w])
+        
+        # Accumulate theta change for synchronization with encoder data
+        d_theta = self.imu_theta - prev_theta
+        self.accumulated_imu_theta += d_theta
 
     def read_serial_and_publish(self):
         if self.serial_port.in_waiting > 0:
@@ -173,7 +181,10 @@ class Esp32ScogNode(Node):
                 d_left = (left - self.prev_left) / self.counts_per_rev * self.circumference
                 d_right = (right - self.prev_right) / self.counts_per_rev * self.circumference
                 d_odom_theta = (d_right - d_left) / self.wheel_base
-                d_imu_theta = self.imu_theta - self.prev_imu_theta
+                
+                # Use accumulated IMU theta change and reset accumulator
+                d_imu_theta = self.accumulated_imu_theta
+                self.accumulated_imu_theta = 0.0
 
                 # formula 7: 計算 slip ratios 的比值
                 if d_left == 0 or d_right == 0:
@@ -205,7 +216,7 @@ class Esp32ScogNode(Node):
                 d_theta = (d_right_corr - d_left_corr) / self.wheel_base
 
                 self.theta += d_theta
-                # self.theta = self.imu_theta   
+                # self.theta = self.imu_theta
                 self.x += d_center * math.cos(self.theta)
                 self.y += d_center * math.sin(self.theta)
                
@@ -226,7 +237,6 @@ class Esp32ScogNode(Node):
                 # update previous values
                 self.prev_left = left
                 self.prev_right = right
-                self.prev_imu_theta = self.imu_theta
 
             except ValueError:
                 self.get_logger().warn(f"Receiving Invalid data: {line}")
