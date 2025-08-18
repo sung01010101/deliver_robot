@@ -23,7 +23,7 @@ def generate_launch_description():
     
     output_directory_arg = DeclareLaunchArgument(
         'output_directory',
-        default_value='~/map_ws/scog',
+        default_value='~/scog',
         description='Output directory for CSV file'
     )
     

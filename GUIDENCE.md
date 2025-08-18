@@ -19,7 +19,7 @@ ssh ubuntu@<raspberry_ip>
 **Terminal 2**
 ```bash
 ssh ubuntu@<raspberry_ip>
-ros2 launch deliver_robot esp32_serial.launch.py use_imu:=true
+ros2 launch deliver_robot esp32_serial.launch.py
 ```
 
 ### Step 2. 開啟建圖並遙控
@@ -56,7 +56,9 @@ ssh ubuntu@<raspberry_ip>
 **Terminal 2**
 ```bash
 ssh ubuntu@<raspberry_ip>
-ros2 launch deliver_robot esp32_serial.launch.py use_imu:=true
+ros2 launch deliver_robot esp32_serial.launch.py
+
+ros2 launch deliver_robot esp32_scog.launch.py  # Alternate: Launch Slip Ratio Compensation Odometry
 ```
 
 **Terminal 3**
