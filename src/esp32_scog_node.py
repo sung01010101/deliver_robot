@@ -210,14 +210,13 @@ class Esp32ScogNode(Node):
                 self.y += d_center * math.sin(self.theta)
                
                 # debugging outputs
-                self.get_logger().info(f"d_left: {d_left:.4f}, {d_right:.4f}, "
-                                       f"d_theta: {d_odom_theta:.4f}, {d_imu_theta:.4f}, "
-                                       f"slip: {slip_l:.4f}, {slip_r:.4f}")
+                self.get_logger().info(f"Odometry: x={self.x:.2f}, y={self.y:.2f}, theta={self.theta:.2f}, ")
                 
                 scog_msg = Float32MultiArray()
                 scog_msg.data = [d_left, d_right, d_odom_theta, d_imu_theta,
+                                 slip_ratio_ratio, denominator, slip_l, slip_r,
                                  d_left_corr, d_right_corr, d_theta,
-                                 slip_l, slip_r]
+                                 self.x, self.y, self.theta]
                 self.scog_pub.publish(scog_msg)
 
                 # publish odometry

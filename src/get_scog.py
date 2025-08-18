@@ -72,14 +72,19 @@ class GetScogNode(Node):
                 headers = [
                     'timestamp',
                     'd_left',
-                    'd_right', 
+                    'd_right',
                     'd_odom_theta',
                     'd_imu_theta',
+                    'slip_ratio_ratio',
+                    'denominator',
+                    'slip_l',
+                    'slip_r',
                     'd_left_corr',
                     'd_right_corr',
                     'd_theta',
-                    'slip_l',
-                    'slip_r'
+                    'x',
+                    'y',
+                    'theta'
                 ]
                 writer.writerow(headers)
                 
@@ -105,8 +110,8 @@ class GetScogNode(Node):
             timestamp = current_timestamp - self.start_time
             
             # Ensure we have the expected number of data points
-            if len(msg.data) != 9:
-                self.get_logger().warn(f"Expected 9 data points, got {len(msg.data)}")
+            if len(msg.data) != 14:
+                self.get_logger().warn(f"Expected 14 data points, got {len(msg.data)}")
                 return
             
             # Prepare data row
