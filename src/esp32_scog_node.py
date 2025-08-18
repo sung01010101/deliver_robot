@@ -77,7 +77,6 @@ class Esp32ScogNode(Node):
         self.imu_z = 0.0
         self.imu_w = 1.0
         self.imu_theta = 0.0
-        self.prev_imu_theta = 0.0
         self.accumulated_imu_theta = 0.0
 
         # Connect serial port
