@@ -58,6 +58,9 @@ class GetScogNode(Node):
         # Counter for logged messages
         self.message_count = 0
         
+        # Start time for relative timestamp calculation
+        self.start_time = None
+        
         self.get_logger().info(f"SCOG data logger started. Saving to: {self.csv_file_path}")
 
     def init_csv_file(self):
@@ -91,7 +94,15 @@ class GetScogNode(Node):
         try:
             # Get current timestamp
             current_time = self.get_clock().now()
-            timestamp = current_time.seconds_nanoseconds()[0] + current_time.seconds_nanoseconds()[1] * 1e-9
+            current_timestamp = current_time.seconds_nanoseconds()[0] + current_time.seconds_nanoseconds()[1] * 1e-9
+            
+            # Set start time on first message
+            if self.start_time is None:
+                self.start_time = current_timestamp
+                self.get_logger().info(f"Start time set: {self.start_time}")
+            
+            # Calculate relative timestamp (starts from 0)
+            timestamp = current_timestamp - self.start_time
             
             # Ensure we have the expected number of data points
             if len(msg.data) != 9:
