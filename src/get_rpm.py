@@ -68,15 +68,12 @@ class GetScogNode(Node):
                 # Write header row based on the data from esp32_scog_node.py
                 headers = [
                     'timestamp',
-                    'd_left',
-                    'd_right', 
-                    'd_odom_theta',
-                    'd_imu_theta',
-                    'd_left_corr',
-                    'd_right_corr',
-                    'd_theta',
-                    'slip_l',
-                    'slip_r'
+                    'pwm_left',
+                    'pwm_right',
+                    'desired_rpm_left',
+                    'desired_rpm_right',
+                    'actual_rpm_left',
+                    'actual_rpm_right',
                 ]
                 writer.writerow(headers)
                 
@@ -94,8 +91,8 @@ class GetScogNode(Node):
             timestamp = current_time.seconds_nanoseconds()[0] + current_time.seconds_nanoseconds()[1] * 1e-9
             
             # Ensure we have the expected number of data points
-            if len(msg.data) != 9:
-                self.get_logger().warn(f"Expected 9 data points, got {len(msg.data)}")
+            if len(msg.data) != 6:
+                self.get_logger().warn(f"Expected 6 data points, got {len(msg.data)}")
                 return
             
             # Prepare data row
