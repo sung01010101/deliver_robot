@@ -184,7 +184,7 @@ class Esp32ScogNode(Node):
                 # formula 3 + 7 合併後的公式, 解右輪 slip ratio
                 denominator = (slip_ratio_ratio * d_left - d_right)
 
-                if abs(denominator) < 0.002 or d_imu_theta < 0.005:
+                if abs(denominator) < 0.001 or d_imu_theta < 0.005:
                     # 直行或數值不穩定時，假設小 slip（等量）
                     slip_r = self.base_slip_ratio
                     slip_l = self.base_slip_ratio
