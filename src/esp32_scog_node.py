@@ -76,7 +76,7 @@ class Esp32ScogNode(Node):
         # Initialize IMU data
         self.imu_z = 0.0
         self.imu_w = 1.0
-        self.prev_theta = 0.0
+        self.imu_prev_theta = 0.0
         self.accumulated_imu_theta = 0.0
 
         # Connect serial port
@@ -145,10 +145,10 @@ class Esp32ScogNode(Node):
         self.imu_w = msg.orientation.w
         
         # Accumulate theta change for synchronization with encoder data
-        _, _, current_theta = euler_from_quaternion([x, y, self.imu_z, self.imu_w])
-        d_theta = current_theta - self.prev_theta
+        _, _, imu_current_theta = euler_from_quaternion([x, y, self.imu_z, self.imu_w])
+        d_theta = imu_current_theta - self.imu_prev_theta
         self.accumulated_imu_theta += d_theta
-        self.prev_theta = current_theta
+        self.imu_prev_theta = imu_current_theta
 
     def read_serial_and_publish(self):
         if self.serial_port.in_waiting > 0:
@@ -217,7 +217,7 @@ class Esp32ScogNode(Node):
                 self.y += d_center * math.sin(self.theta)
                
                 # debugging outputs
-                self.get_logger().info(f"Odometry: x={self.x:.2f}, y={self.y:.2f}, theta={self.theta:.2f}, ")
+                self.get_logger().info(f"Odometry: x={self.x:.2f}, y={self.y:.2f}, theta={self.theta:.2f}")
                 
                 scog_msg = Float32MultiArray()
                 scog_msg.data = [d_left, d_right, d_odom_theta, d_imu_theta,
