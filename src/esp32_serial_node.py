@@ -9,6 +9,7 @@ from std_msgs.msg import Float32MultiArray
 from tf2_ros import TransformBroadcaster
 from tf_transformations import euler_from_quaternion
 import serial
+import numpy as np
 import math
 
 
@@ -32,6 +33,7 @@ class Esp32SerialNode(Node):
         self.declare_parameter('odom_topic', '/odom')
         self.declare_parameter('imu_topic', '/imu/data_raw')
         self.declare_parameter('use_imu', False)
+        self.declare_parameter('tune_cmd_vel', True)
         
         # Get parameters
         self.counts_per_rev = self.get_parameter('encoder_cpr').get_parameter_value().double_value
@@ -49,6 +51,7 @@ class Esp32SerialNode(Node):
         self.odom_topic = self.get_parameter('odom_topic').get_parameter_value().string_value
         self.imu_topic = self.get_parameter('imu_topic').get_parameter_value().string_value
         self.use_imu = self.get_parameter('use_imu').get_parameter_value().bool_value
+        self.tune_cmd_vel = self.get_parameter('tune_cmd_vel').get_parameter_value().bool_value
         
         # Calculate circumference
         self.circumference = 2 * math.pi * self.wheel_radius
@@ -65,6 +68,7 @@ class Esp32SerialNode(Node):
         self.get_logger().info(f"  Base Slip Ratio: {self.base_slip_ratio}")
         self.get_logger().info(f"  IMU Topic: {self.imu_topic}")
         self.get_logger().info(f"  Use Imu for Rotation: {self.use_imu}")
+        self.get_logger().info(f"  Tune cmd_vel under low cmd_vel: {self.tune_cmd_vel}")
         
         # Initialize odometry data
         self.x = 0.0
@@ -119,6 +123,13 @@ class Esp32SerialNode(Node):
         linear_vel = msg.linear.x
         angular_vel = msg.angular.z
         
+        # adjust velocity if speed is too low
+        if self.tune_cmd_vel:
+            if abs(linear_vel) < 0.1:
+                linear_vel = np.sign(linear_vel) * 0.1
+            if abs(angular_vel) < 0.1:
+                angular_vel = np.sign(angular_vel) * 0.1
+
         # calculate velocity (m/s)
         left_speed = linear_vel - (angular_vel * self.wheel_base / 2)
         right_speed = linear_vel + (angular_vel * self.wheel_base / 2)

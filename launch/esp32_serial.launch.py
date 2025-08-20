@@ -29,6 +29,12 @@ def generate_launch_description():
         description='Use EKF if True',
     )
 
+    declare_tune_cmd_vel_arg = DeclareLaunchArgument(
+        'tune_cmd_vel',
+        default_value='True',
+        description='Tune cmd_vel parameters if True'
+    )
+
     # launch nodes
     # robot_localization_node = Node(
     #     package='robot_localization',
@@ -49,10 +55,8 @@ def generate_launch_description():
         output='screen',
         parameters=[
             esp32_config_file,
-            {'use_imu': LaunchConfiguration('use_imu')}
-        ],
-        remappings=[
-            ('/cmd_vel', '/cmd_vel')
+            {'use_imu': LaunchConfiguration('use_imu')},
+            {'tune_cmd_vel': LaunchConfiguration('tune_cmd_vel')},
         ]
     )
 
