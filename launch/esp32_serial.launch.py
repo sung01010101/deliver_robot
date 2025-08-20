@@ -61,8 +61,9 @@ def generate_launch_description():
     )
 
     return LaunchDescription([
-        declare_use_imu_arg,
         declare_use_sim_time_arg,
+        declare_use_imu_arg,
+        declare_tune_cmd_vel_arg,
         # robot_localization_node,
         esp32_serial_node
     ])
