@@ -123,8 +123,12 @@ class Esp32SerialNode(Node):
         linear_vel = msg.linear.x
         angular_vel = msg.angular.z
         
-        # adjust velocity if speed is too low
         if self.tune_cmd_vel:
+            # boost robot
+            linear_vel *= 1.1
+            angular_vel *= 1.1
+
+            # adjust velocity if speed is too low
             if abs(linear_vel) < 0.1:
                 linear_vel = np.sign(linear_vel) * 0.1
             if abs(angular_vel) < 0.2:
