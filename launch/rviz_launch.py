@@ -92,7 +92,7 @@ def generate_launch_description():
             ('/tf_static', 'tf_static'),
             ('/goal_pose', 'goal_pose'),
             ('/clicked_point', 'clicked_point'),
-            ('/initialpose', 'initialpose'),
+            ('/initialpose', 'initialpose')
         ],
     )
 
@@ -102,7 +102,7 @@ def generate_launch_description():
             target_action=start_rviz_cmd,
             on_exit=EmitEvent(event=Shutdown(reason='rviz exited')),
         ),
-    )
+    ) 
 
     exit_event_handler_namespaced = RegisterEventHandler(
         condition=IfCondition(use_namespace),

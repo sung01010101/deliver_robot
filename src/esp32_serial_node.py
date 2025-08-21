@@ -125,15 +125,14 @@ class Esp32SerialNode(Node):
         
         if self.tune_cmd_vel:
             # boost robot
-            linear_vel *= 1.1
-            angular_vel *= 1.1
+            linear_vel *= 1.0
+            angular_vel *= 1.0
 
             # adjust velocity if speed is too low
             if abs(linear_vel) < 0.1:
                 linear_vel = np.sign(linear_vel) * 0.1
             if abs(angular_vel) < 0.2:
                 angular_vel = np.sign(angular_vel) * 0.2
-
         # calculate velocity (m/s)
         left_speed = linear_vel - (angular_vel * self.wheel_base / 2)
         right_speed = linear_vel + (angular_vel * self.wheel_base / 2)

@@ -71,22 +71,23 @@ ros2 launch wit_ros2_imu rviz_and_imu.launch.py
 
 **Terminal 4**
 ```bash
-ros2 launch deliver_robot localization.launch.py map:=/home/sung/map_ws/maps/<map_name>.yaml
+ros2 launch deliver_robot localization_launch.py map:=/home/sung/map_ws/maps/<map_name>.yaml
 ```
 
 **Terminal 5**
 ```bash
-ros2 launch deliver_robot navigation.launch.py
+ros2 launch deliver_robot navigation_launch.py
 ```
 
 **Terminal 6**
 ```bash
-ros2 launch deliver_robot rviz.launch.py
+ros2 launch deliver_robot rviz_launch.py
 ```
 
-### Step 3. 使用 Rviz 進行導航
+## 電腦傳給樹莓派 （所有地圖檔資料）
 
-- **估計機器人位置**：使用 `2D pose estimate`
-- **標記導航目標點**：使用 `Nav 2 Goal`
-
+**Terminal**
+```bash
+scp -r /home/sung/map_ws/maps/* ubuntu@<raspberry_ip>:/home/ubuntu/map_ws/maps
+```
 ---
