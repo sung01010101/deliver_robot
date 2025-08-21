@@ -92,7 +92,7 @@ def generate_launch_description():
             ('/tf_static', 'tf_static'),
             ('/goal_pose', 'goal_pose'),
             ('/clicked_point', 'clicked_point'),
-            ('/initialpose', 'initialpose')
+            ('/initialpose', 'initialpose'),
         ],
     )
 
