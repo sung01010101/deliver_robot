@@ -26,7 +26,7 @@ class Esp32SerialNode(Node):
         self.declare_parameter('serial_port', '/dev/esp32')
         self.declare_parameter('serial_baudrate', 115200)
         self.declare_parameter('serial_timeout', 1.0)
-        self.declare_parameter('serial_timer', 0.1)
+        self.declare_parameter('serial_timer', 0.01)
         self.declare_parameter('odom_frame_id', 'odom')
         self.declare_parameter('base_frame_id', 'base_footprint')
         self.declare_parameter('cmd_vel_topic', '/cmd_vel')
@@ -123,16 +123,13 @@ class Esp32SerialNode(Node):
         linear_vel = msg.linear.x
         angular_vel = msg.angular.z
         
+        # adjust velocity if speed is too low
         if self.tune_cmd_vel:
-            # boost robot
-            linear_vel *= 1.0
-            angular_vel *= 1.0
-
-            # adjust velocity if speed is too low
             if abs(linear_vel) < 0.1:
                 linear_vel = np.sign(linear_vel) * 0.1
-            if abs(angular_vel) < 0.2:
-                angular_vel = np.sign(angular_vel) * 0.2
+            if abs(angular_vel) < 0.1:
+                angular_vel = np.sign(angular_vel) * 0.1
+
         # calculate velocity (m/s)
         left_speed = linear_vel - (angular_vel * self.wheel_base / 2)
         right_speed = linear_vel + (angular_vel * self.wheel_base / 2)

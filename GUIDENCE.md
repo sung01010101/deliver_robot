@@ -26,12 +26,12 @@ ros2 launch deliver_robot esp32_serial.launch.py
 
 **Terminal 3**
 ```bash
-ros2 launch deliver_robot cartographer_lidar_only.launch.py
+    ros2 launch deliver_robot cartographer_lidar_only.launch.py
 ```
 
 **Terminal 4**
 ```bash
-ros2 run teleop_twist_keyboard teleop_twist_keyboard cmd_vel:=/cmd_vel
+ros2 launch teleop_twist_joy teleop-launch.py
 ```
 
 ### Step 3. 儲存地圖檔案（建圖完成後執行）
