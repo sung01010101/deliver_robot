@@ -7,10 +7,27 @@ from geometry_msgs.msg import Twist, TransformStamped
 from sensor_msgs.msg import Imu
 from std_msgs.msg import Float32MultiArray
 from tf2_ros import TransformBroadcaster
-from tf_transformations import euler_from_quaternion
+# from tf_transformations import euler_from_quaternion
 import serial
 import numpy as np
 import math
+
+# Fallback for tf_transformations NumPy 2.0 incompat issue
+try:
+    from tf_transformations import euler_from_quaternion  # may raise due to transforms3d using removed NumPy APIs
+except Exception:
+    def euler_from_quaternion(quat):
+        x, y, z, w = quat
+        t0 = +2.0 * (w * x + y * z)
+        t1 = +1.0 - 2.0 * (x * x + y * y)
+        roll = math.atan2(t0, t1)
+        t2 = +2.0 * (w * y - z * x)
+        t2 = 1.0 if t2 > 1.0 else (-1.0 if t2 < -1.0 else t2)
+        pitch = math.asin(t2)
+        t3 = +2.0 * (w * z + x * y)
+        t4 = +1.0 - 2.0 * (y * y + z * z)
+        yaw = math.atan2(t3, t4)
+        return roll, pitch, yaw
 
 
 class Esp32SerialNode(Node):
@@ -123,12 +140,16 @@ class Esp32SerialNode(Node):
         linear_vel = msg.linear.x
         angular_vel = msg.angular.z
         
-        # adjust velocity if speed is too low
         if self.tune_cmd_vel:
+            # boost robot
+            linear_vel *= 1.1
+            angular_vel *= 1.1
+
+            # adjust velocity if speed is too low
             if abs(linear_vel) < 0.1:
                 linear_vel = np.sign(linear_vel) * 0.1
-            if abs(angular_vel) < 0.1:
-                angular_vel = np.sign(angular_vel) * 0.1
+            if abs(angular_vel) < 0.2:
+                angular_vel = np.sign(angular_vel) * 0.2
 
         # calculate velocity (m/s)
         left_speed = linear_vel - (angular_vel * self.wheel_base / 2)

@@ -26,7 +26,7 @@ ros2 launch deliver_robot esp32_serial.launch.py
 
 **Terminal 3**
 ```bash
-    ros2 launch deliver_robot cartographer_lidar_only.launch.py
+ros2 launch deliver_robot cartographer_lidar_only.launch.py
 ```
 
 **Terminal 4**
