@@ -148,7 +148,7 @@ class Esp32SerialNode(Node):
             # boost robot
             left_speed *= 1.1
             right_speed *= 1.1
-            
+
             # calculate multiply_ratio and constrain its value with max_ratio
             min_vel = 0.1
             max_ratio = 3.0
@@ -167,11 +167,6 @@ class Esp32SerialNode(Node):
             #     linear_vel = np.sign(linear_vel) * 0.1
             # if abs(angular_vel) < 0.2:
             #     angular_vel = np.sign(angular_vel) * 0.2
-
-        if abs(linear_vel) < 0.1:
-                linear_vel = np.sign(linear_vel) * 0.1
-        if abs(angular_vel) < 0.2:
-                angular_vel = np.sign(angular_vel) * 0.2
         
         # velocity to rpm
         left_rpm = self.constrain((left_speed / self.circumference) * 60, -self.motor_max_rpm, self.motor_max_rpm)
