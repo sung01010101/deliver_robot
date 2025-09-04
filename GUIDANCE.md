@@ -18,7 +18,7 @@ ssh ubuntu@<raspberry_ip>
 
 **Terminal 2**
 ```bash
-ssh ubuntu@<raspberry_ip>
+ssh ubuntu@<raspberry_.ip>
 ros2 launch deliver_robot esp32_serial.launch.py
 ```
 

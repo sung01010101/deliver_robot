@@ -139,21 +139,39 @@ class Esp32SerialNode(Node):
     def cmd_vel_callback(self, msg):
         linear_vel = msg.linear.x
         angular_vel = msg.angular.z
-        
-        if self.tune_cmd_vel:
-            # boost robot
-            linear_vel *= 1.1
-            angular_vel *= 1.1
-
-            # adjust velocity if speed is too low
-            if abs(linear_vel) < 0.1:
-                linear_vel = np.sign(linear_vel) * 0.1
-            if abs(angular_vel) < 0.2:
-                angular_vel = np.sign(angular_vel) * 0.2
 
         # calculate velocity (m/s)
         left_speed = linear_vel - (angular_vel * self.wheel_base / 2)
         right_speed = linear_vel + (angular_vel * self.wheel_base / 2)
+
+        if self.tune_cmd_vel:
+            # boost robot
+            left_speed *= 1.1
+            right_speed *= 1.1
+            
+            # calculate multiply_ratio and constrain its value with max_ratio
+            min_vel = 0.1
+            max_ratio = 3.0
+            multiply_ratio = min(left_speed, right_speed) / min_vel
+            multiply_ratio = np.sign(multiply_ratio) * np.clip(abs(multiply_ratio), 1, max_ratio)
+
+            left_speed *= multiply_ratio
+            right_speed *= multiply_ratio
+
+            # boost robot
+            # linear_vel *= 1.1
+            # angular_vel *= 1.1
+
+            # adjust velocity if speed is too low
+            # if abs(linear_vel) < 0.1:
+            #     linear_vel = np.sign(linear_vel) * 0.1
+            # if abs(angular_vel) < 0.2:
+            #     angular_vel = np.sign(angular_vel) * 0.2
+
+        if abs(linear_vel) < 0.1:
+                linear_vel = np.sign(linear_vel) * 0.1
+        if abs(angular_vel) < 0.2:
+                angular_vel = np.sign(angular_vel) * 0.2
         
         # velocity to rpm
         left_rpm = self.constrain((left_speed / self.circumference) * 60, -self.motor_max_rpm, self.motor_max_rpm)
