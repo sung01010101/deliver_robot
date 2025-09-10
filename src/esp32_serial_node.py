@@ -149,14 +149,13 @@ class Esp32SerialNode(Node):
             left_speed *= 1.1
             right_speed *= 1.1
 
-            # calculate multiply_ratio and constrain its value with max_ratio
             min_vel = 0.1
             max_ratio = 3.0
-            multiply_ratio = min(left_speed, right_speed) / min_vel
-            multiply_ratio = np.sign(multiply_ratio) * np.clip(abs(multiply_ratio), 1, max_ratio)
+            multiply_ratio = min_vel / min(abs(left_speed), abs(right_speed))  # calculate multiply_ratio
+            multiply_ratio = np.clip(abs(multiply_ratio), 1, max_ratio)  # constrain multiply_ratio
 
-            left_speed *= multiply_ratio
-            right_speed *= multiply_ratio
+            left_speed *= np.sign(left_speed) * multiply_ratio
+            right_speed *= np.sign(right_speed) * multiply_ratio
 
             # boost robot
             # linear_vel *= 1.1
