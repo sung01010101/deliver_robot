@@ -76,10 +76,15 @@ ros2 launch deliver_robot localization_launch.py map:=/home/sung/map_ws/maps/<ma
 
 **Terminal 5**
 ```bash
-ros2 launch deliver_robot navigation_launch.py
+ros2 launch nav2_costmap_filters_demo costmap_filter_info.launch.py  mask:=/home/sung/map_ws/keepout/<map_name>.yaml 
 ```
 
 **Terminal 6**
+```bash
+ros2 launch deliver_robot navigation_launch.py
+```
+
+**Terminal 7**
 ```bash
 ros2 launch deliver_robot rviz_launch.py
 ```
