@@ -148,7 +148,11 @@ class Esp32SerialNode(Node):
 
             min_vel = 0.1
             max_ratio = 3.0
-            multiply_ratio = min_vel / min(abs(left_speed), abs(right_speed))  # calculate multiply_ratio
+            abs_min_speed = min(abs(left_speed), abs(right_speed))
+            if abs_min_speed == 0:
+                multiply_ratio = min_vel / 1e-6  # calculate multiply_ratio
+            else:
+                multiply_ratio = min_vel / abs_min_speed  # calculate multiply_ratio
             multiply_ratio = np.clip(abs(multiply_ratio), 1, max_ratio)  # constrain multiply_ratio
 
             left_speed *= np.sign(left_speed) * multiply_ratio
