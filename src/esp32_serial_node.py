@@ -146,11 +146,13 @@ class Esp32SerialNode(Node):
             left_speed *= 1.1
             right_speed *= 1.1
 
+            # adjust variables for low speed
             min_vel = 0.1
             max_ratio = 3.0
+
             abs_min_speed = min(abs(left_speed), abs(right_speed))
             if abs_min_speed == 0:
-                multiply_ratio = min_vel / 1e-6  # calculate multiply_ratio
+                multiply_ratio = 0.01  # calculate multiply_ratio
             else:
                 multiply_ratio = min_vel / abs_min_speed  # calculate multiply_ratio
             multiply_ratio = np.clip(abs(multiply_ratio), 1, max_ratio)  # constrain multiply_ratio
