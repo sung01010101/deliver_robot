@@ -165,8 +165,8 @@ class Esp32SerialNode(Node):
             #     angular_vel = np.sign(angular_vel) * 0.2
         
         # velocity to rpm
-        left_rpm = (left_speed / self.circumference) * 60, -self.motor_max_rpm, self.motor_max_rpm
-        right_rpm = (right_speed / self.circumference) * 60, -self.motor_max_rpm, self.motor_max_rpm
+        left_rpm = (left_speed / self.circumference) * 60
+        right_rpm = (right_speed / self.circumference) * 60
         
         # send data to ESP32
         # string format: "L100,R200\n" (Left: 100RPM, Right: 200RPM)
