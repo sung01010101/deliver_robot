@@ -36,7 +36,6 @@ class Esp32SerialNode(Node):
         
         # Declare parameters with default values
         self.declare_parameter('encoder_cpr', 700.0)
-        self.declare_parameter('motor_max_rpm', 330)
         self.declare_parameter('wheel_base', 0.465)
         self.declare_parameter('wheel_radius', 0.02)
         self.declare_parameter('base_slip_ratio', 0.0)
@@ -54,7 +53,6 @@ class Esp32SerialNode(Node):
         
         # Get parameters
         self.counts_per_rev = self.get_parameter('encoder_cpr').get_parameter_value().double_value
-        self.motor_max_rpm = self.get_parameter('motor_max_rpm').get_parameter_value().integer_value
         self.wheel_base = self.get_parameter('wheel_base').get_parameter_value().double_value
         self.wheel_radius = self.get_parameter('wheel_radius').get_parameter_value().double_value
         self.base_slip_ratio = self.get_parameter('base_slip_ratio').get_parameter_value().double_value
@@ -76,7 +74,6 @@ class Esp32SerialNode(Node):
         # Log parameters
         self.get_logger().info(f"ESP32 Serial Node Parameters:")
         self.get_logger().info(f"  Encoder CPR: {self.counts_per_rev}")
-        self.get_logger().info(f"  Motor Max RPM: {self.motor_max_rpm}")
         self.get_logger().info(f"  Wheel Base: {self.wheel_base} m")
         self.get_logger().info(f"  Wheel Radius: {self.wheel_radius} m")
         self.get_logger().info(f"  Serial Port: {self.serial_port_name}")

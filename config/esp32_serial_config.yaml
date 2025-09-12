@@ -1,7 +1,6 @@
 esp32_serial_node:
   ros__parameters:
     # Hardware Settings
-    motor_max_rpm: 330            # rpm of motor when fully operated
     wheel_base: 0.465             # (m) distance between wheels
     wheel_radius: 0.02            # (m) radius of wheels
     encoder_cpr: 700.0            # count per revolution, (13 PPR * 30 gear ratio * 4 encoders tick per revolution / 2 for only checking phase A = 700)
