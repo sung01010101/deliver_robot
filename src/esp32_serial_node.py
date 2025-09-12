@@ -168,8 +168,8 @@ class Esp32SerialNode(Node):
             #     angular_vel = np.sign(angular_vel) * 0.2
         
         # velocity to rpm
-        left_rpm = self.constrain((left_speed / self.circumference) * 60, -self.motor_max_rpm, self.motor_max_rpm)
-        right_rpm = self.constrain((right_speed / self.circumference) * 60, -self.motor_max_rpm, self.motor_max_rpm)
+        left_rpm = (left_speed / self.circumference) * 60, -self.motor_max_rpm, self.motor_max_rpm
+        right_rpm = (right_speed / self.circumference) * 60, -self.motor_max_rpm, self.motor_max_rpm
         
         # send data to ESP32
         # string format: "L100,R200\n" (Left: 100RPM, Right: 200RPM)
@@ -274,10 +274,6 @@ class Esp32SerialNode(Node):
         odom.pose.pose.orientation.w = self.imu_w
         
         self.odom_pub.publish(odom)
-
-    def constrain(self, val, min_val, max_val):
-        """Constrain value between min and max"""
-        return max(min_val, min(val, max_val))
 
     def destroy_node(self):
         """Clean up resources when shutting down"""
