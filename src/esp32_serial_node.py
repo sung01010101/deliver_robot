@@ -143,33 +143,30 @@ class Esp32SerialNode(Node):
 
         if self.tune_cmd_vel:
             # boost robot
-            left_speed *= 1.1
-            right_speed *= 1.1
+            linear_vel *= 1.1
+            angular_vel *= 1.1
 
-            # adjust variables for low speed
+            # adjust velocity with fixed minimums
+            if abs(left_speed) < 0.1:
+                left_speed = np.sign(left_speed) * 0.1
+            if abs(right_speed) < 0.1:
+                right_speed = np.sign(right_speed) * 0.1
+
+            # adjust velocity dynamically for low speed
+            """
             min_vel = 0.1
             max_ratio = 3.0
 
             abs_min_speed = min(abs(left_speed), abs(right_speed))
             if abs_min_speed == 0:
-                multiply_ratio = 0.01  # calculate multiply_ratio
-            else:
-                multiply_ratio = min_vel / abs_min_speed  # calculate multiply_ratio
-            multiply_ratio = np.clip(abs(multiply_ratio), 1, max_ratio)  # constrain multiply_ratio
+                abs_min_speed = 0.01  # calculate multiply_ratio
+            multiply_ratio = min_vel / abs_min_speed  # calculate multiply_ratio
+            constrained_multiply_ratio = np.clip(multiply_ratio, 1, max_ratio)  # constrain multiply_ratio
 
-            left_speed *= np.sign(left_speed) * multiply_ratio
-            right_speed *= np.sign(right_speed) * multiply_ratio
+            left_speed *= constrained_multiply_ratio
+            right_speed *= constrained_multiply_ratio
+            """
 
-            # boost robot
-            # linear_vel *= 1.1
-            # angular_vel *= 1.1
-
-            # adjust velocity if speed is too low
-            # if abs(linear_vel) < 0.1:
-            #     linear_vel = np.sign(linear_vel) * 0.1
-            # if abs(angular_vel) < 0.2:
-            #     angular_vel = np.sign(angular_vel) * 0.2
-        
         # velocity to rpm
         left_rpm = (left_speed / self.circumference) * 60
         right_rpm = (right_speed / self.circumference) * 60
