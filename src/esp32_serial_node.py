@@ -149,8 +149,8 @@ class Esp32SerialNode(Node):
             # adjust velocity with fixed minimums
             if abs(left_speed) < 0.1:
                 left_speed = np.sign(left_speed) * 0.1
-            if abs(right_speed) < 0.1:
-                right_speed = np.sign(right_speed) * 0.1
+            if abs(right_speed) < 0.2:
+                right_speed = np.sign(right_speed) * 0.2
 
             # adjust velocity dynamically for low speed
             """
