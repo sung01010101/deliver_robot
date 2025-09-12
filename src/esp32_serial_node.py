@@ -35,14 +35,18 @@ class Esp32SerialNode(Node):
         super().__init__('esp32_serial_node')
         
         # Declare parameters with default values
-        self.declare_parameter('encoder_cpr', 700.0)
         self.declare_parameter('wheel_base', 0.465)
         self.declare_parameter('wheel_radius', 0.02)
-        self.declare_parameter('base_slip_ratio', 0.0)
+        self.declare_parameter('encoder_cpr', 700.0)
+
+        self.declare_parameter('boost_vel', 1.0)
+        self.declare_parameter('min_vel', 0.1)
+
         self.declare_parameter('serial_port', '/dev/esp32')
         self.declare_parameter('serial_baudrate', 115200)
         self.declare_parameter('serial_timeout', 1.0)
         self.declare_parameter('serial_timer', 0.1)
+        
         self.declare_parameter('odom_frame_id', 'odom')
         self.declare_parameter('base_frame_id', 'base_footprint')
         self.declare_parameter('cmd_vel_topic', '/cmd_vel')
@@ -52,14 +56,18 @@ class Esp32SerialNode(Node):
         self.declare_parameter('tune_cmd_vel', True)
         
         # Get parameters
-        self.counts_per_rev = self.get_parameter('encoder_cpr').get_parameter_value().double_value
         self.wheel_base = self.get_parameter('wheel_base').get_parameter_value().double_value
         self.wheel_radius = self.get_parameter('wheel_radius').get_parameter_value().double_value
-        self.base_slip_ratio = self.get_parameter('base_slip_ratio').get_parameter_value().double_value
+        self.counts_per_rev = self.get_parameter('encoder_cpr').get_parameter_value().double_value
+
+        self.boost_vel = self.get_parameter('boost_vel').get_parameter_value().double_value
+        self.min_vel = self.get_parameter('min_vel').get_parameter_value().double_value
+
         self.serial_port_name = self.get_parameter('serial_port').get_parameter_value().string_value
         self.serial_baudrate = self.get_parameter('serial_baudrate').get_parameter_value().integer_value
         self.serial_timeout = self.get_parameter('serial_timeout').get_parameter_value().double_value
         self.serial_timer = self.get_parameter('serial_timer').get_parameter_value().double_value
+
         self.odom_frame_id = self.get_parameter('odom_frame_id').get_parameter_value().string_value
         self.base_frame_id = self.get_parameter('base_frame_id').get_parameter_value().string_value
         self.cmd_vel_topic = self.get_parameter('cmd_vel_topic').get_parameter_value().string_value
@@ -79,7 +87,6 @@ class Esp32SerialNode(Node):
         self.get_logger().info(f"  Serial Port: {self.serial_port_name}")
         self.get_logger().info(f"  Serial Baudrate: {self.serial_baudrate}")
         self.get_logger().info(f"  ----------------------------------------------------")
-        self.get_logger().info(f"  Base Slip Ratio: {self.base_slip_ratio}")
         self.get_logger().info(f"  IMU Topic: {self.imu_topic}")
         self.get_logger().info(f"  Use Imu for Rotation: {self.use_imu}")
         self.get_logger().info(f"  Tune cmd_vel under low cmd_vel: {self.tune_cmd_vel}")
@@ -138,39 +145,24 @@ class Esp32SerialNode(Node):
         angular_vel = msg.angular.z
 
         # calculate velocity (m/s)
-        left_speed = linear_vel - (angular_vel * self.wheel_base / 2)
-        right_speed = linear_vel + (angular_vel * self.wheel_base / 2)
+        left_vel = linear_vel - (angular_vel * self.wheel_base / 2)
+        right_vel = linear_vel + (angular_vel * self.wheel_base / 2)
 
         if self.tune_cmd_vel:
-            # boost robot
-            linear_vel *= 1.1
-            angular_vel *= 1.1
+            # boost robot velocity
+            left_vel *= self.boost_vel
+            right_vel *= self.boost_vel
 
-            # adjust velocity with fixed minimums
-            if abs(left_speed) < 0.1:
-                left_speed = np.sign(left_speed) * 0.1
-            if abs(right_speed) < 0.2:
-                right_speed = np.sign(right_speed) * 0.2
-
-            # adjust velocity dynamically for low speed
-            """
-            min_vel = 0.1
-            max_ratio = 3.0
-
-            abs_min_speed = min(abs(left_speed), abs(right_speed))
-            if abs_min_speed == 0:
-                abs_min_speed = 0.01  # calculate multiply_ratio
-            multiply_ratio = min_vel / abs_min_speed  # calculate multiply_ratio
-            constrained_multiply_ratio = np.clip(multiply_ratio, 1, max_ratio)  # constrain multiply_ratio
-
-            left_speed *= constrained_multiply_ratio
-            right_speed *= constrained_multiply_ratio
-            """
+            # enforce minimum velocity
+            if abs(left_vel) < self.min_vel:
+                left_vel = np.sign(left_vel) * self.min_vel
+            if abs(right_vel) < self.min_vel:
+                right_vel = np.sign(right_vel) * self.min_vel
 
         # velocity to rpm
-        left_rpm = (left_speed / self.circumference) * 60
-        right_rpm = (right_speed / self.circumference) * 60
-        
+        left_rpm = (left_vel / self.circumference) * 60
+        right_rpm = (right_vel / self.circumference) * 60
+
         # send data to ESP32
         # string format: "L100,R200\n" (Left: 100RPM, Right: 200RPM)
         command = f"L{left_rpm:.2f},R{right_rpm:.2f}\n"

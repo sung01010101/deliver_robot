@@ -5,16 +5,18 @@ esp32_serial_node:
     wheel_radius: 0.02            # (m) radius of wheels
     encoder_cpr: 700.0            # count per revolution, (13 PPR * 30 gear ratio * 4 encoders tick per revolution / 2 for only checking phase A = 700)
 
-    # Slip Ratio
-    base_slip_ratio: 0.057        # apply when moving in nearly straight line
-    param_n: 0.5                  # parameter to compensate speed difference between wheels
+    # Tune Command Velocity
+    boost_vel: 1.1                # multiply velocity
+    min_vel: 0.1                  # minimum velocity threshold
+
+    # # Slip Ratio
+    # base_slip_ratio: 0.057        # apply when moving in nearly straight line
+    # param_n: 0.5                  # parameter to compensate speed difference between wheels
 
     # Serial Communication
     serial_port: "/dev/esp32"
     serial_baudrate: 115200
     serial_timeout: 1.0
-    
-    # Timer Settings
     serial_timer: 0.1            # refresh rate for serial communication with ESP32
                                   
     # Frame IDs
