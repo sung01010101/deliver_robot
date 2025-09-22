@@ -209,14 +209,21 @@ class Esp32SerialNode(Node):
                 d_left = (left - self.prev_left) / self.counts_per_rev * self.circumference
                 d_right = (right - self.prev_right) / self.counts_per_rev * self.circumference
 
-                # apply fixed slip ratio (not precise estimation)
-                d_left *= (1 - self.base_slip_ratio)
-                d_right *= (1 - self.base_slip_ratio)
+                # warn on unrealistic jumps
+                if abs(d_left) > 1.0 or abs(d_right) > 1.0:
+                    self.get_logger().warn(
+                        f"Receive Unusual increment or decrement in encoder data. "
+                        f"It may be caused by low battery voltage.")
+                    
+                    # shutdown node if unrealistic jump detected
+                    self.get_logger().info(f"Shutting down esp32_serial_node...")
+                    self.destroy_node()
+                    return
                 
                 # update odometry
                 d_center = (d_left + d_right) / 2.0
-                
                 self.theta = self.imu_theta
+
                 self.x += d_center * math.cos(self.theta)
                 self.y += d_center * math.sin(self.theta)
                 
