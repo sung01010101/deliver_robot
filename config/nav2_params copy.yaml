@@ -67,7 +67,7 @@ bt_navigator:
 
 controller_server:
   ros__parameters:
-    controller_frequency: 10.0   ### change frequency to 10Hz
+    controller_frequency: 20.0   ### 
     costmap_update_timeout: 0.30
     min_x_velocity_threshold: 0.1  ###
     min_y_velocity_threshold: 0.5
@@ -140,7 +140,7 @@ controller_server:
     FollowPath:
       plugin: "nav2_mppi_controller::MPPIController"
       time_steps: 56
-      model_dt: 0.1   ### change to 0.1 (10Hz)
+      model_dt: 0.05
       batch_size: 2000
       ax_max: 3.0
       ax_min: -3.0
@@ -238,13 +238,13 @@ local_costmap:
       width: 6
       height: 6
       resolution: 0.05
-      robot_radius: 0.30   ### robot radius
+      robot_radius: 0.2   ### robot radius
       plugins: ["voxel_layer", "inflation_layer"]
       filters: ["keepout_filter"]
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"
         cost_scaling_factor: 3.0
-        inflation_radius: 0.5   ### inflation radius
+        inflation_radius: 0.35   ### inflation radius
       voxel_layer:
         plugin: "nav2_costmap_2d::VoxelLayer"
         enabled: True
@@ -258,7 +258,7 @@ local_costmap:
         scan:
           topic: /scan
           max_obstacle_height: 2.0
-          robot_radius: 0.30   ### robot radius
+          robot_radius: 0.20   ### robot radius
           resolution: 0.05
           clearing: True
           marking: True
@@ -283,7 +283,7 @@ global_costmap:
       publish_frequency: 1.0
       global_frame: map
       robot_base_frame: base_link
-      robot_radius: 0.30   ### robot radius
+      robot_radius: 0.2   ### robot radius
       resolution: 0.05
       track_unknown_space: true
       plugins: ["static_layer", "obstacle_layer", "inflation_layer"]
@@ -308,7 +308,7 @@ global_costmap:
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"
         cost_scaling_factor: 3.0
-        inflation_radius: 0.5   ### inflation radius
+        inflation_radius: 0.35   ### inflation radius
       keepout_filter:
         plugin: "nav2_costmap_2d::KeepoutFilter"
         enabled: True
