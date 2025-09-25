@@ -3,7 +3,7 @@ esp32_serial_node:
     # Hardware Settings
     wheel_base: 0.465             # (m) distance between wheels
     wheel_radius: 0.02            # (m) radius of wheels
-    encoder_cpr: 700.0            # count per revolution, (13 PPR * 30 gear ratio * 4 encoders tick per revolution / 2 for only checking phase A = 700)
+    encoder_cpr: 1560             # count per revolution, (13 PPR * 30 gear ratio * 4 encoders tick per revolution = 1560)
 
     # Tune Command Velocity
     boost_vel: 1.1                # multiply velocity
@@ -17,7 +17,7 @@ esp32_serial_node:
     serial_port: "/dev/esp32"
     serial_baudrate: 115200
     serial_timeout: 1.0
-    serial_timer: 0.1            # refresh rate for serial communication with ESP32
+    serial_timer: 0.08            # refresh rate for serial communication with ESP32 (12.4HZ, 0.08s)
                                   
     # Frame IDs
     odom_frame_id: "odom"

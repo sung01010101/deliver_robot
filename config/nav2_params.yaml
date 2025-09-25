@@ -67,7 +67,7 @@ bt_navigator:
 
 controller_server:
   ros__parameters:
-    controller_frequency: 10.0   ### change to 10Hz
+    controller_frequency: 12.5   ### change to 10Hz
     costmap_update_timeout: 0.30
     min_x_velocity_threshold: 0.001
     min_y_velocity_threshold: 0.5
@@ -141,7 +141,7 @@ controller_server:
     FollowPath:
       plugin: "nav2_mppi_controller::MPPIController"
       time_steps: 56
-      model_dt: 0.1   ### change to 0.1 (10Hz)
+      model_dt: 0.08   ### change to 0.1 (10Hz)
       batch_size: 2000
       ax_max: 3.0
       ax_min: -3.0
@@ -332,7 +332,7 @@ map_saver:
 
 planner_server:
   ros__parameters:
-    expected_planner_frequency: 10.0  ### change to 10Hz
+    expected_planner_frequency: 20.0  ### change to 10Hz
     planner_plugins: ["GridBased"]
     costmap_update_timeout: 1.0
     GridBased:
@@ -429,7 +429,7 @@ waypoint_follower:
 
 velocity_smoother:
   ros__parameters:
-    smoothing_frequency: 20.0
+    smoothing_frequency: 20.0   ### change to 10Hz
     scale_velocities: False
     feedback: "OPEN_LOOP"
     max_velocity: [0.5, 0.0, 2.0]
@@ -448,8 +448,8 @@ collision_monitor:
     cmd_vel_in_topic: "cmd_vel_smoothed"
     cmd_vel_out_topic: "cmd_vel"          ### change to match twist_mux output
     state_topic: "collision_monitor_state"
-    transform_tolerance: 0.2
-    source_timeout: 1.0
+    transform_tolerance: 0.04    ### serial timing, originally set to 0.2
+    source_timeout: 0.0         ### serial timing, originally set to 1.0
     base_shift_correction: True
     stop_pub_timeout: 2.0
     # Polygons represent zone around the robot for "stop", "slowdown" and "limit" action types,

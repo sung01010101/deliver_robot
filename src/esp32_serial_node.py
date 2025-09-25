@@ -37,7 +37,7 @@ class Esp32SerialNode(Node):
         # Declare parameters with default values
         self.declare_parameter('wheel_base', 0.465)
         self.declare_parameter('wheel_radius', 0.02)
-        self.declare_parameter('encoder_cpr', 700.0)
+        self.declare_parameter('encoder_cpr', 1560)
 
         self.declare_parameter('boost_vel', 1.0)
         self.declare_parameter('min_vel', 0.1)
