@@ -45,7 +45,7 @@ class Esp32SerialNode(Node):
         self.declare_parameter('serial_port', '/dev/esp32')
         self.declare_parameter('serial_baudrate', 115200)
         self.declare_parameter('serial_timeout', 1.0)
-        self.declare_parameter('serial_timer', 0.1)
+        self.declare_parameter('serial_timer', 0.05)
         
         self.declare_parameter('odom_frame_id', 'odom')
         self.declare_parameter('base_frame_id', 'base_footprint')
