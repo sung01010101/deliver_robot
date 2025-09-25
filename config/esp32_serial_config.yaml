@@ -17,7 +17,7 @@ esp32_serial_node:
     serial_port: "/dev/esp32"
     serial_baudrate: 115200
     serial_timeout: 1.0
-    serial_timer: 0.05            # refresh rate for serial communication with ESP32
+    serial_timer: 0.1            # refresh rate for serial communication with ESP32
                                   
     # Frame IDs
     odom_frame_id: "odom"
