@@ -1,4 +1,0 @@
-twist_mux:
-  ros__parameters:
-    # Use stamped twist messages (TwistStamped vs Twist)
-    use_stamped: false
